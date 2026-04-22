@@ -1,0 +1,128 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { FiCalendar, FiClock } from 'react-icons/fi';
+import { api } from '../../../utils/api';
+import { Election } from '../../../types';
+
+export const DatesSettings: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchElection = async () => {
+      if (!id) return;
+      try {
+        const election = await api.getElectionById(id);
+        if (election) {
+          // Format timestamps if they exist (YYYY-MM-DDTHH:MM)
+          if (election.start_date) {
+            setStartDate(new Date(election.start_date).toISOString().slice(0, 16));
+          }
+          if (election.end_date) {
+            setEndDate(new Date(election.end_date).toISOString().slice(0, 16));
+          }
+          setTimezone(election.timezone || '(GMT+0:00) Africa/Abidjan');
+        }
+      } catch (err) {
+        console.error("Error fetching election:", err);
+      }
+    };
+    fetchElection();
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      await api.updateElection(id, {
+        start_date: new Date(startDate).toISOString(),
+        end_date: new Date(endDate).toISOString(),
+        timezone,
+      });
+      alert('Dates saved successfully!');
+    } catch (err) {
+      console.error("Error saving dates:", err);
+      alert('Failed to save dates.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white">
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <h3 className="text-[15px] font-bold text-[#333] flex items-center gap-2">
+          <FiCalendar className="text-gray-500" />
+          Election Dates
+        </h3>
+      </div>
+      
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-[13px] font-bold text-gray-700 mb-2">
+              Start Date
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiCalendar className="text-gray-400" />
+              </div>
+              <input
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-[14px] text-gray-700 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:outline-none focus:border-[#00AEEF] transition-colors"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[13px] font-bold text-gray-700 mb-2">
+              End Date
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiCalendar className="text-gray-400" />
+              </div>
+              <input
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-[14px] text-gray-700 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:outline-none focus:border-[#00AEEF] transition-colors"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-bold text-gray-700 mb-2 flex items-center gap-1">
+            <FiClock className="w-3 h-3 text-gray-400" /> Timezone
+          </label>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="w-full px-3 py-2 text-[14px] text-gray-700 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:outline-none focus:border-[#00AEEF] transition-colors"
+          >
+            <option value="(GMT+0:00) Africa/Abidjan">(GMT+0:00) Africa/Abidjan</option>
+            <option value="(GMT+0:00) Europe/London">(GMT+0:00) Europe/London</option>
+            <option value="(GMT-5:00) America/New_York">(GMT-5:00) America/New_York</option>
+            <option value="(GMT+8:00) Asia/Singapore">(GMT+8:00) Asia/Singapore</option>
+            <option value="(GMT+10:00) Australia/Sydney">(GMT+10:00) Australia/Sydney</option>
+          </select>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2 bg-[#00D02D] text-white rounded font-bold text-[14px] hover:bg-[#00B026] transition-colors shadow-sm disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save Dates'}
+        </button>
+      </div>
+    </div>
+  );
+};
