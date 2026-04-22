@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Button } from '../components/common/Button';
-import { FiLayers } from 'react-icons/fi';
+
 
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowRight, FiCalendar, FiGlobe } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar } from 'react-icons/fi';
 import { api } from '../../utils/api';
 
 export const CreateElection: React.FC = () => {

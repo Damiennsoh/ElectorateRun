@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiBriefcase } from 'react-icons/fi';
 import { api } from '../../../utils/api';
-import { supabase } from '../../../utils/supabase';
 
 export const OrganizationSettings: React.FC = () => {
   const [orgName, setOrgName] = useState('');

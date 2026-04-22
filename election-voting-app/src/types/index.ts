@@ -36,6 +36,7 @@ export interface Voter {
   has_voted: boolean;
   voted_at?: string;
   vote_weight?: number;
+  invitation_sent_at?: string;
 }
 
 export interface BallotQuestion {

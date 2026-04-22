@@ -123,14 +123,7 @@ const App: React.FC = () => {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>}>
           <Route index element={<Navigate to="general" replace />} />
           <Route path="general" element={<GeneralSettings />} />
-          <Route path="dates" element={<DatesSettings />} />
-          <Route path="voters" element={<VotersSettings />} />
-          <Route path="messages" element={<MessagesSettings />} />
           <Route path="email" element={<EmailSettings />} />
-          <Route path="results" element={<ResultsSettings />} />
-          <Route path="duplicate" element={<DuplicateElection />} />
-          <Route path="archive" element={<ArchiveElection />} />
-          <Route path="delete" element={<DeleteElection />} />
         </Route>
 
         <Route path="/settings/account" element={<ProtectedRoute><AccountSettingsLayout /></ProtectedRoute>}>

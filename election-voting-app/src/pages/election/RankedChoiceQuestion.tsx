@@ -6,7 +6,7 @@ import { RichTextEditor } from '../../components/common/RichTextEditor';
 import { Toggle } from '../../components/common/Toggle';
 
 export const RankedChoiceQuestion: React.FC = () => {
-  const { id, questionId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [title, setTitle] = useState('New Ranked Choice Question');
   const [description, setDescription] = useState('');

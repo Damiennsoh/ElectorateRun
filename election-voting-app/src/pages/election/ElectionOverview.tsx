@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
-import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList, FiClock } from 'react-icons/fi';
+import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election } from '../../types';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiUsers, FiUploadCloud, FiPlus, FiTrash2, FiSearch, FiEdit2, FiMoreVertical, FiDownload, FiCheck, FiX, FiMail, FiCopy } from 'react-icons/fi';
+import { FiUsers, FiUploadCloud, FiPlus, FiTrash2, FiSearch, FiEdit2, FiMoreVertical, FiDownload, FiCheck, FiMail, FiCopy } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { AddVoterModal } from '../../components/election/AddVoterModal';
 import { ImportVotersModal } from '../../components/election/ImportVotersModal';

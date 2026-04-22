@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 
 interface ReceiptModalProps {
   isOpen: boolean;

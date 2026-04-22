@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiCalendar, FiClock } from 'react-icons/fi';
 import { api } from '../../../utils/api';
-import { Election } from '../../../types';
+
 
 export const DatesSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();

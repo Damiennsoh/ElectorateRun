@@ -6,7 +6,7 @@ import { Button } from '../components/common/Button';
 import { FiDownload, FiShare2, FiBarChart2, FiCheckCircle } from 'react-icons/fi';
 import { api } from '../utils/api';
 import { supabase } from '../utils/supabase';
-import { Election, BallotQuestion, CandidateOption } from '../types';
+import { Election } from '../types';
 
 interface ResultItem {
   name: string;

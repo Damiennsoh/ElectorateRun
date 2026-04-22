@@ -8,7 +8,7 @@ interface MainLayoutProps {
   status?: string;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, status }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
       <Header />
