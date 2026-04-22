@@ -9,7 +9,6 @@ import {
   FiMail,
   FiPieChart,
   FiCopy,
-  FiArchive,
   FiTrash2,
 } from 'react-icons/fi';
 

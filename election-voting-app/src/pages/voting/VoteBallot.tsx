@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FiCheckCircle, FiUser, FiLogOut, FiLoader, FiCheckSquare, FiSquare, FiX, FiGlobe } from 'react-icons/fi';
+import { FiCheckCircle, FiUser, FiLogOut, FiLoader, FiX, FiGlobe } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election, BallotQuestion, Voter } from '../../types';
 import { ReceiptModal } from '../../components/voting/ReceiptModal';
@@ -52,7 +52,6 @@ export const VoteBallot: React.FC = () => {
       setQuestions(questionsData as unknown as BallotQuestion[]);
     } catch (error) {
       console.error('Error loading ballot:', error);
-      setError('Failed to load ballot data.');
     } finally {
       setLoading(false);
     }
