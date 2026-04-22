@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FiLock, FiUser, FiArrowRight, FiCheckCircle, FiAlertCircle, FiAlertTriangle, FiX, FiGlobe } from 'react-icons/fi';
+import { FiCheckCircle, FiAlertCircle, FiAlertTriangle, FiX, FiGlobe } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election } from '../../types';
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { FiUser } from 'react-icons/fi';
-import { Button } from '../../../components/common/Button';
 import { supabase } from '../../../utils/supabase';
 
 export const ProfileSettings: React.FC = () => {

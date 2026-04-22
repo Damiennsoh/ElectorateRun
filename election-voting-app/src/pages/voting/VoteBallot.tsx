@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FiCheckCircle, FiInfo, FiUser, FiArrowLeft, FiLogOut, FiSend, FiLoader, FiCheckSquare, FiSquare, FiX, FiGlobe, FiDownload } from 'react-icons/fi';
+import { FiCheckCircle, FiUser, FiLogOut, FiLoader, FiCheckSquare, FiSquare, FiX, FiGlobe } from 'react-icons/fi';
 import { api } from '../../utils/api';
-import { Election, BallotQuestion, CandidateOption, Voter } from '../../types';
+import { Election, BallotQuestion, Voter } from '../../types';
 import { ReceiptModal } from '../../components/voting/ReceiptModal';
 
 export const VoteBallot: React.FC = () => {
@@ -19,7 +19,6 @@ export const VoteBallot: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [receiptId, setReceiptId] = useState('');
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams(location.search);
   const isPreview = queryParams.get('preview') === 'true';

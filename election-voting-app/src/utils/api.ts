@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Election, Voter, BallotQuestion, Candidate, Vote } from '../types';
+import { Election } from '../types';
 
 export const api = {
   // --- Elections ---
@@ -33,13 +33,13 @@ export const api = {
     
     if (electionError) throw electionError;
 
-    const { data: organization, error: orgError } = await supabase
+    const { data: organization } = await supabase
       .from('organizations')
       .select('*')
       .eq('user_id', election.user_id)
       .single();
     
-    // We don't throw for orgError because an election should still show even if org profile isn't set
+    // We don't throw for error because an election should still show even if org profile isn't set
     return { ...election, organization };
   },
 
