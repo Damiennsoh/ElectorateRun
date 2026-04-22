@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useParams, useLocation } from 'react-router-dom';
 import { 
   FiHome, FiSettings, FiList, FiUsers, 
-  FiEye, FiPlusSquare, FiSend, FiChevronLeft, FiShield
+  FiEye, FiPlusSquare, FiSend, FiShield
 } from 'react-icons/fi';
 import { Header } from './Header';
 import { api } from '../../utils/api';
@@ -13,7 +13,6 @@ interface ElectionSidebarLayoutProps {
 
 export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ children }) => {
   const { id } = useParams();
-  const location = useLocation();
   const [currentElection, setCurrentElection] = useState<any>({ title: 'Loading...', status: 'draft' });
 
   const [voterCount, setVoterCount] = useState(0);

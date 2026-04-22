@@ -4,9 +4,11 @@ import { FiHelpCircle } from 'react-icons/fi';
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  title?: string;
+  status?: string;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, status }) => {
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
       <Header />

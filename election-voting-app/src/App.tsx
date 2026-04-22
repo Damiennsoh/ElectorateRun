@@ -26,7 +26,6 @@ import { AddOns } from './pages/election/AddOns';
 import { Preview } from './pages/election/Preview';
 import { Voters } from './pages/election/Voters';
 import { ElectionSidebarLayout } from './components/layout/ElectionSidebarLayout';
-import { FiEye, FiArrowRight } from 'react-icons/fi';
 import { ElectionSettingsLayout } from './pages/election/settings/ElectionSettingsLayout';
 import { GeneralSettings as ElectionGeneralSettings } from './pages/election/settings/GeneralSettings';
 import { DatesSettings as ElectionDatesSettings } from './pages/election/settings/DatesSettings';
@@ -42,21 +41,6 @@ import { VoteBallot } from './pages/voting/VoteBallot';
 
 // Placeholder components for other routes
 const FraudAnalysis = () => <ElectionSidebarLayout><div className="p-8 text-2xl font-bold">Fraud Analysis</div></ElectionSidebarLayout>;
-const DatesSettings = () => <div className="p-8 text-xl font-bold">Dates Settings</div>;
-const VotersSettings = () => <div className="p-8 text-xl font-bold">Voters Settings</div>;
-const MessagesSettings = () => <div className="p-8 text-xl font-bold">Messages Settings</div>;
-const ResultsSettings = () => <div className="p-8 text-xl font-bold">Results Settings</div>;
-const DuplicateElection = () => <div className="p-8 text-xl font-bold">Duplicate Election</div>;
-const ArchiveElection = () => <div className="p-8 text-xl font-bold">Archive Election</div>;
-const DeleteElection = () => <div className="p-8 text-xl font-bold">Delete Election</div>;
-const BillingSettingsRoute = () => <BillingSettings />;
-const SecuritySettingsRoute = () => <SecuritySettings />;
-
-// Election Specific Routes (Sidebar Layout)
-const ElectionBallot = () => <Ballot />;
-const ElectionVoters = () => <Voters />;
-const ElectionPreview = () => <Preview />;
-const ElectionAddOns = () => <AddOns />;
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);

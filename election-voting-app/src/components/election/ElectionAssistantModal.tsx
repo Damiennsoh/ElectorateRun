@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiBriefcase, FiUsers, FiList, FiCheckCircle, FiInfo, FiAlertCircle, FiX, FiArrowRight, FiHelpCircle } from 'react-icons/fi';
+import { FiBriefcase, FiCheckCircle, FiInfo, FiArrowRight, FiHelpCircle } from 'react-icons/fi';
 
 interface ElectionAssistantModalProps {
   isOpen: boolean;

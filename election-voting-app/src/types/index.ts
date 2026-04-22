@@ -63,6 +63,12 @@ export interface CandidateOption {
   order_index: number;
 }
 
+export interface Candidate {
+  id: string;
+  title: string;
+  description?: string;
+}
+
 export interface Vote {
   id: string;
   voterId: string;

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { RichTextEditor } from '../common/RichTextEditor';
-import { FiCheckCircle, FiTrash2, FiUser, FiCamera, FiLoader } from 'react-icons/fi';
+import { FiCheckCircle, FiTrash2, FiCamera, FiLoader } from 'react-icons/fi';
 import { CandidateOption } from '../../types';
 import { api } from '../../utils/api';
 
