@@ -1,0 +1,56 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.parcel-cache/
+/.pnp
+/.pnp.cjs
+
+# Vite / Rollup
+/.vite
+/.rpt2_cache/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime files
+.env
+.env.*.local
+.env.local
+/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+.nyc_output/
+
+# Cache
+.cache/
+node_modules/.cache/
+
+# Generated public files
+/public/build/
+
+# Lockfiles (optional)
+# pnpm-lock.yaml
+# package-lock.json
+# yarn.lock
