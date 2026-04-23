@@ -237,6 +237,15 @@ export const Voters: React.FC = () => {
   return (
     <ElectionSidebarLayout>
       <div className="max-w-[1200px] mx-auto px-6 py-8">
+        {/* Voting closed banner */}
+        {electionStatus && electionStatus !== 'active' && (
+          <div className="mb-6 p-4 rounded border border-gray-200 bg-yellow-50 text-gray-800">
+            <strong className="font-bold mr-2">Voting is not active.</strong>
+            {electionStatus === 'completed'
+              ? 'This election has been completed — voters can no longer vote and any voting links will show that voting is closed.'
+              : 'This election is not currently running. Voter login and voting will be disabled until the election is set to Running.'}
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -253,13 +262,15 @@ export const Voters: React.FC = () => {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-[#00AEEF] rounded hover:bg-gray-50 font-bold text-sm shadow-sm transition-all"
+              disabled={electionStatus === 'completed'}
+              className={`flex items-center gap-2 px-4 py-2 ${electionStatus === 'completed' ? 'bg-gray-100 text-gray-400 border border-gray-200' : 'bg-white border border-gray-300 text-[#00AEEF]'} rounded hover:bg-gray-50 font-bold text-sm shadow-sm transition-all`}
             >
               <FiUploadCloud /> Import
             </button>
             <button 
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#00D02D] text-white rounded hover:bg-[#00B026] font-bold text-sm shadow-sm transition-all"
+              disabled={electionStatus === 'completed'}
+              className={`flex items-center gap-2 px-4 py-2 ${electionStatus === 'completed' ? 'bg-gray-100 text-gray-400' : 'bg-[#00D02D] text-white hover:bg-[#00B026]'} rounded font-bold text-sm shadow-sm transition-all`}
             >
               <FiPlus /> Add Voter
             </button>
@@ -278,7 +289,7 @@ export const Voters: React.FC = () => {
                   <button onClick={handleExportVoterLogs} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
                     <FiFileText className="text-gray-400" /> Export Voter Logs
                   </button>
-                  <button onClick={handleSendReminders} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#00AEEF] hover:bg-blue-50 border-b border-gray-100">
+                  <button onClick={handleSendReminders} disabled={electionStatus !== 'active'} className={`w-full flex items-center gap-2 px-4 py-3 text-sm ${electionStatus !== 'active' ? 'text-gray-400' : 'text-[#00AEEF]'} hover:bg-blue-50 border-b border-gray-100`}>
                     <FiSend className="text-[#00AEEF]" /> Send Reminders
                   </button>
                   {electionStatus !== 'active' && electionStatus !== 'completed' && (
@@ -344,11 +355,12 @@ export const Voters: React.FC = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 group-hover:visible visible">
                         <button 
-                            onClick={() => copyVoterLink(voter)}
-                            className="p-1.5 text-gray-400 hover:text-[#00AEEF] transition-colors"
-                            title="Copy Voting Link"
+                          onClick={() => copyVoterLink(voter)}
+                          disabled={electionStatus !== 'active'}
+                          className={`p-1.5 ${electionStatus !== 'active' ? 'text-gray-300' : 'text-gray-400 hover:text-[#00AEEF]'} transition-colors`}
+                          title={electionStatus !== 'active' ? 'Voting is closed' : 'Copy Voting Link'}
                         >
-                            <FiCopy />
+                          <FiCopy />
                         </button>
                         <button 
                             onClick={() => {
