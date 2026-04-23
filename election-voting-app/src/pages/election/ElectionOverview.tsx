@@ -12,6 +12,7 @@ export const ElectionOverview: React.FC = () => {
   const [orgSubdomain, setOrgSubdomain] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
+  const [submissionsByDate, setSubmissionsByDate] = useState<{date:string,count:number}[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -96,6 +97,14 @@ export const ElectionOverview: React.FC = () => {
         options: totalOptions,
         votesCast
       });
+
+      // Fetch ballots by date for the chart
+      try {
+        const byDate = await api.getBallotsByDate(electionId);
+        setSubmissionsByDate(byDate || []);
+      } catch (e) {
+        console.warn('Failed to load ballots by date', e);
+      }
     } catch (error) {
       console.error('Error fetching election details:', error);
     } finally {
@@ -111,9 +120,10 @@ export const ElectionOverview: React.FC = () => {
   if (loading) return <ElectionSidebarLayout><div className="p-20 text-center text-gray-500">Loading...</div></ElectionSidebarLayout>;
   if (!election) return <ElectionSidebarLayout><div className="p-20 text-center text-red-500">Election not found.</div></ElectionSidebarLayout>;
 
-  const baseDomain = 'electionrunner.com';
-  const electionUrl = `https://vote.${baseDomain}/election/ILOX8`; 
-  const orgUrl = `https://${orgSubdomain || 'mmuleadership'}.${baseDomain}`;
+  const baseUrl = (import.meta.env.VITE_PUBLIC_URL as string) || 'https://vote.electorateun.com';
+  const baseOrg = (import.meta.env.VITE_PUBLIC_URL_ORG as string) || 'https://electorateun.com';
+  const electionUrl = `${baseUrl}/election/${id}`;
+  const orgUrl = `${orgSubdomain ? `https://${orgSubdomain}.` : ''}${baseOrg.replace(/^https?:\/\//, '')}`;
 
   const participationRate = stats.voters > 0 ? Math.round((stats.votesCast / stats.voters) * 100) : 0;
 
@@ -144,104 +154,161 @@ export const ElectionOverview: React.FC = () => {
             </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 space-y-6">
-             {/* Charts Section for Running Election */}
-             {election.status === 'active' && (
-                <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
-                    </div>
-                    <div className="p-8 h-[250px] flex items-end justify-between relative">
-                        {/* Placeholder for chart lines */}
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none">
-                            <svg width="100%" height="100%" className="opacity-20">
-                                <path d="M0 200 Q 150 150, 300 180 T 600 100 T 900 140" fill="none" stroke="#00AEEF" strokeWidth="2" />
-                            </svg>
-                        </div>
-                        <div className="w-full h-[1px] bg-[#00AEEF] absolute bottom-8 opacity-50"></div>
-                        {/* Fake X-axis markers */}
-                        {[...Array(7)].map((_, i) => (
-                            <div key={i} className="w-2 h-2 rounded-full bg-[#00AEEF] mb-[-4px] relative z-10"></div>
-                        ))}
-                    </div>
+        {/* For completed elections: show full-width chart and horizontal stat cards */}
+        {election.status === 'completed' ? (
+          <>
+            <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
+              </div>
+              <div className="p-6">
+                <div className="h-[220px] flex items-end">
+                  <svg width="100%" height="220" className="block">
+                    {/* compute simple bars */}
+                    {submissionsByDate.length === 0 && (
+                      <text x="50%" y="50%" textAnchor="middle" fill="#cbd5e1">No submissions</text>
+                    )}
+                    {submissionsByDate.length > 0 && (() => {
+                      const max = Math.max(...submissionsByDate.map(d => d.count));
+                      const gap = 100 / submissionsByDate.length;
+                      return submissionsByDate.map((d, i) => {
+                        const h = (d.count / max) * 160;
+                        const x = (i * (100 / submissionsByDate.length));
+                        return (
+                          <rect key={d.date} x={`${x}%`} y={180 - h} width={`${gap - 6}%`} height={h} fill="#00AEEF" />
+                        );
+                      });
+                    })()}
+                  </svg>
                 </div>
-             )}
+              </div>
+            </div>
 
-             <div className="bg-white border border-gray-200 rounded shadow-sm">
+            <div className="flex gap-6 mt-6">
+              {(election.status === 'active' || election.status === 'completed') && (
+                <div className="bg-[#00D02D] rounded p-6 text-white flex-1 text-center shadow-sm">
+                  <FiCheckCircle className="opacity-10 w-12 h-12 mx-auto" />
+                  <div className="text-4xl font-bold mt-2">{participationRate}%</div>
+                  <div className="text-xs font-bold uppercase tracking-widest mt-2">Participation ({stats.votesCast} Voters)</div>
+                </div>
+              )}
+
+              <div className="bg-[#FF6A13] rounded p-6 text-white flex-1 text-center shadow-sm">
+                <FiUsers className="opacity-10 w-12 h-12 mx-auto" />
+                <div className="text-4xl font-bold mt-2">{stats.voters}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2">Voters</div>
+              </div>
+
+              <div className="bg-[#FF0080] rounded p-6 text-white flex-1 text-center shadow-sm">
+                <FiHelpCircle className="opacity-10 w-12 h-12 mx-auto" />
+                <div className="text-4xl font-bold mt-2">{stats.questions}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2">Ballot Questions</div>
+              </div>
+
+              <div className="bg-[#603FEF] rounded p-6 text-white flex-1 text-center shadow-sm">
+                <FiList className="opacity-10 w-12 h-12 mx-auto" />
+                <div className="text-4xl font-bold mt-2">{stats.options}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2">Options</div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3 space-y-6">
+              {/* Charts Section for Running Election */}
+              { (election.status === 'active' || election.status === 'draft') && (
+                <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
+                  </div>
+                  <div className="p-8 h-[250px] flex items-end justify-between relative">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none">
+                      <svg width="100%" height="100%" className="opacity-20">
+                        <path d="M0 200 Q 150 150, 300 180 T 600 100 T 900 140" fill="none" stroke="#00AEEF" strokeWidth="2" />
+                      </svg>
+                    </div>
+                    <div className="w-full h-[1px] bg-[#00AEEF] absolute bottom-8 opacity-50"></div>
+                    {[...Array(7)].map((_, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-[#00AEEF] mb-[-4px] relative z-10"></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white border border-gray-200 rounded shadow-sm">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                    <FiGlobe className="text-gray-800" />
-                    <h3 className="font-bold text-gray-800 text-sm">Voting URLs</h3>
+                  <FiGlobe className="text-gray-800" />
+                  <h3 className="font-bold text-gray-800 text-sm">Voting URLs</h3>
                 </div>
                 <div className="p-8 space-y-8">
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-[13px] font-bold text-gray-700">Election URL</label>
-                        </div>
-                        <div className="flex">
-                            <input readOnly value={electionUrl} className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
-                            <button onClick={() => copyToClipboard(electionUrl)} className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
-                                <FiCopy /> Copy
-                            </button>
-                        </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[13px] font-bold text-gray-700">Election URL</label>
                     </div>
+                    <div className="flex">
+                      <input readOnly value={electionUrl} className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
+                      <button onClick={() => copyToClipboard(electionUrl)} className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
+                        <FiCopy /> Copy
+                      </button>
+                    </div>
+                  </div>
 
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-[13px] font-bold text-gray-700">Short URL</label>
-                        </div>
-                        <div className="flex">
-                            <input readOnly placeholder=" " className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
-                            <button className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
-                                <FiCopy /> Copy
-                            </button>
-                        </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[13px] font-bold text-gray-700">Short URL</label>
                     </div>
+                    <div className="flex">
+                      <input readOnly placeholder=" " className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
+                      <button className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
+                        <FiCopy /> Copy
+                      </button>
+                    </div>
+                  </div>
 
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-[13px] font-bold text-gray-700">Organization Subdomain</label>
-                        </div>
-                        <div className="flex">
-                            <input readOnly value={orgUrl} className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
-                            <button onClick={() => copyToClipboard(orgUrl)} className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
-                                <FiCopy /> Copy
-                            </button>
-                        </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[13px] font-bold text-gray-700">Organization Subdomain</label>
                     </div>
+                    <div className="flex">
+                      <input readOnly value={orgUrl} className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
+                      <button onClick={() => copyToClipboard(orgUrl)} className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
+                        <FiCopy /> Copy
+                      </button>
+                    </div>
+                  </div>
                 </div>
-             </div>
-          </div>
+              </div>
+            </div>
 
-          <div className="space-y-4">
-             {/* Participation Card - Only for Active/Completed */}
-             {(election.status === 'active' || election.status === 'completed') && (
+            <div className="space-y-4">
+              {(election.status === 'active' || election.status === 'completed') && (
                 <div className="bg-[#00D02D] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
-                    <FiCheckCircle className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
-                    <div className="text-5xl font-bold relative z-10">{participationRate}%</div>
-                    <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Participation ({stats.votesCast} Voters)</div>
+                  <FiCheckCircle className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
+                  <div className="text-5xl font-bold relative z-10">{participationRate}%</div>
+                  <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Participation ({stats.votesCast} Voters)</div>
                 </div>
-             )}
+              )}
 
-             <div className="bg-[#FF6A13] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
+              <div className="bg-[#FF6A13] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
                 <FiUsers className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
                 <div className="text-5xl font-bold relative z-10">{stats.voters}</div>
                 <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Voters</div>
-             </div>
+              </div>
 
-             <div className="bg-[#FF0080] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
+              <div className="bg-[#FF0080] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
                 <FiHelpCircle className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
                 <div className="text-5xl font-bold relative z-10">{stats.questions}</div>
                 <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Ballot Questions</div>
-             </div>
+              </div>
 
-             <div className="bg-[#603FEF] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
+              <div className="bg-[#603FEF] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
                 <FiList className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
                 <div className="text-5xl font-bold relative z-10">{stats.options}</div>
                 <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Options</div>
-             </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </ElectionSidebarLayout>
   );

@@ -335,6 +335,27 @@ export const api = {
     return data;
   },
 
+  async getBallotsByDate(electionId: string) {
+    // Fetch votes and return counts grouped by date (YYYY-MM-DD)
+    const { data, error } = await supabase
+      .from('votes')
+      .select('submitted_at, timestamp')
+      .eq('election_id', electionId);
+
+    if (error) throw error;
+
+    const counts: Record<string, number> = {};
+    (data || []).forEach((row: any) => {
+      const dt = row.submitted_at || row.timestamp;
+      if (!dt) return;
+      const d = new Date(dt).toISOString().slice(0,10);
+      counts[d] = (counts[d] || 0) + 1;
+    });
+
+    // Convert to sorted array
+    return Object.keys(counts).sort().map(k => ({ date: k, count: counts[k] }));
+  },
+
   // --- Organizations ---
   async getOrganization() {
     const { data: { user } } = await supabase.auth.getUser();
