@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import Papa from 'papaparse';
-import { FiUploadCloud, FiFileText, FiCheckCircle, FiLoader } from 'react-icons/fi';
+import { FiUploadCloud, FiFileText, FiLoader } from 'react-icons/fi';
 
 interface ImportBallotModalProps {
   isOpen: boolean;

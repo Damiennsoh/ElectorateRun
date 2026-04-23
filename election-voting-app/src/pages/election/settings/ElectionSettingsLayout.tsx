@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ElectionSidebarLayout } from '../../../components/layout/ElectionSidebarLayout';
 import {
@@ -9,8 +9,8 @@ import {
   FiMail,
   FiPieChart,
   FiCopy,
-  FiArchive,
   FiTrash2,
+  FiFlag,
 } from 'react-icons/fi';
 
 export const ElectionSettingsLayout: React.FC = () => {
@@ -20,6 +20,7 @@ export const ElectionSettingsLayout: React.FC = () => {
 
   const settingsMenu = [
     { label: 'General', path: `/election/${id}/settings/general`, icon: FiSettings },
+    { label: 'Close Election', path: `/election/${id}/settings/close`, icon: FiFlag },
     { label: 'Dates', path: `/election/${id}/settings/dates`, icon: FiCalendar },
     { label: 'Voters', path: `/election/${id}/settings/voters`, icon: FiUsers },
     { label: 'Messages', path: `/election/${id}/settings/messages`, icon: FiMessageSquare },

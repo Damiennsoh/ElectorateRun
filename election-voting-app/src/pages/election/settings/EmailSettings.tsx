@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiMail, FiCheckCircle, FiInfo, FiHelpCircle } from 'react-icons/fi';
+import { FiMail, FiInfo, FiHelpCircle } from 'react-icons/fi';
 import { api } from '../../../utils/api';
 import { supabase } from '../../../utils/supabase';
 import { Toggle } from '../../../components/common/Toggle';

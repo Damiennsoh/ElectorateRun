@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiAlertTriangle, FiCheckCircle, FiSave, FiTrash2 } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
 import { Toggle } from '../../components/common/Toggle';
 
 export const RankedChoiceQuestion: React.FC = () => {
-  const { id, questionId } = useParams();
+  // id not used here; omit destructuring to avoid unused variable
   const navigate = useNavigate();
   const [title, setTitle] = useState('New Ranked Choice Question');
   const [description, setDescription] = useState('');
