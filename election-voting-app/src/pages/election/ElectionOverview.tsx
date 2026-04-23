@@ -102,7 +102,19 @@ export const ElectionOverview: React.FC = () => {
       // Fetch ballots by date for the chart
       try {
         const byDate = await api.getBallotsByDate(electionId);
-        setSubmissionsByDate(byDate || []);
+        // If RPC returns nothing, fall back to aggregating by voters.voted_at timestamps
+        if (!byDate || byDate.length === 0) {
+          const counts: Record<string, number> = {};
+          (votersData || []).forEach((v: any) => {
+            if (!v.voted_at) return;
+            const d = new Date(v.voted_at).toISOString().slice(0,10);
+            counts[d] = (counts[d] || 0) + 1;
+          });
+          const arr = Object.keys(counts).sort().map(k => ({ date: k, count: counts[k] }));
+          setSubmissionsByDate(arr);
+        } else {
+          setSubmissionsByDate(byDate || []);
+        }
       } catch (e) {
         console.warn('Failed to load ballots by date', e);
       }
