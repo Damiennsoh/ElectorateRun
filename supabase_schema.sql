@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS elections (
     timezone VARCHAR(50) DEFAULT 'UTC',
     status election_status DEFAULT 'building',
     settings JSONB DEFAULT '{}'::jsonb, 
+    is_results_published BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -87,6 +88,9 @@ CREATE TABLE IF NOT EXISTS voters (
     voted_at TIMESTAMPTZ,
     invitation_sent_at TIMESTAMPTZ,
     reminder_sent_at TIMESTAMPTZ,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    ballot_receipt VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(election_id, voter_identifier)
 );
@@ -232,3 +236,44 @@ CREATE POLICY "Allow authenticated uploads" ON storage.objects FOR INSERT TO aut
 
 DROP POLICY IF EXISTS "Allow public read access" ON storage.objects;
 CREATE POLICY "Allow public read access" ON storage.objects FOR SELECT TO public USING (bucket_id = 'election-assets');
+
+-- 8. Views for Real-time Results & Participation
+-- These views are used by the Results page to show live updates
+
+-- election_results_view: Aggregates votes per candidate option
+CREATE OR REPLACE VIEW election_results_view AS
+SELECT 
+    e.id AS election_id,
+    bq.id AS question_id,
+    bq.title AS question_title,
+    co.id AS option_id,
+    co.title AS option_title,
+    co.photo_url,
+    COUNT(vc.id) AS vote_count,
+    SUM(v.vote_weight) AS weighted_vote_count
+FROM elections e
+JOIN ballot_questions bq ON bq.election_id = e.id
+JOIN candidate_options co ON co.ballot_question_id = bq.id
+LEFT JOIN vote_choices vc ON vc.candidate_option_id = co.id
+LEFT JOIN votes vt ON vt.id = vc.vote_id
+LEFT JOIN voters v ON v.id = vt.voter_id
+GROUP BY e.id, bq.id, bq.title, co.id, co.title, co.photo_url;
+
+-- election_participation_view: Calculates total vs voted counts
+CREATE OR REPLACE VIEW election_participation_view AS
+SELECT 
+    election_id,
+    COUNT(id) AS total_voters,
+    COUNT(id) FILTER (WHERE has_voted = true) AS voted_count,
+    CASE 
+        WHEN COUNT(id) = 0 THEN 0 
+        ELSE (COUNT(id) FILTER (WHERE has_voted = true)::FLOAT / COUNT(id)::FLOAT) * 100 
+    END AS participation_rate
+FROM voters
+GROUP BY election_id;
+
+-- Ensure RLS doesn't block the views (Supabase handles this via the underlying tables, but we grant access)
+GRANT SELECT ON election_results_view TO authenticated;
+GRANT SELECT ON election_participation_view TO authenticated;
+GRANT SELECT ON election_results_view TO anon;
+GRANT SELECT ON election_participation_view TO anon;
