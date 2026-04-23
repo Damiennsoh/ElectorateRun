@@ -4,6 +4,7 @@ import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLa
 import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList, FiCheckCircle } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election } from '../../types';
+import BallotsByDateChart from '../../components/charts/BallotsByDateChart';
 
 export const ElectionOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -162,24 +163,8 @@ export const ElectionOverview: React.FC = () => {
                 <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
               </div>
               <div className="p-6">
-                <div className="h-[220px] flex items-end">
-                  <svg width="100%" height="220" className="block">
-                    {/* compute simple bars */}
-                    {submissionsByDate.length === 0 && (
-                      <text x="50%" y="50%" textAnchor="middle" fill="#cbd5e1">No submissions</text>
-                    )}
-                    {submissionsByDate.length > 0 && (() => {
-                      const max = Math.max(...submissionsByDate.map(d => d.count));
-                      const gap = 100 / submissionsByDate.length;
-                      return submissionsByDate.map((d, i) => {
-                        const h = (d.count / max) * 160;
-                        const x = (i * (100 / submissionsByDate.length));
-                        return (
-                          <rect key={d.date} x={`${x}%`} y={180 - h} width={`${gap - 6}%`} height={h} fill="#00AEEF" />
-                        );
-                      });
-                    })()}
-                  </svg>
+                <div className="h-[220px]">
+                  <BallotsByDateChart data={submissionsByDate} />
                 </div>
               </div>
             </div>
