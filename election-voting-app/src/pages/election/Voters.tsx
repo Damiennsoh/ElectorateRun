@@ -356,9 +356,8 @@ export const Voters: React.FC = () => {
                     <div className="flex items-center justify-end gap-2 group-hover:visible visible">
                         <button 
                           onClick={() => copyVoterLink(voter)}
-                          disabled={electionStatus !== 'active'}
-                          className={`p-1.5 ${electionStatus !== 'active' ? 'text-gray-300' : 'text-gray-400 hover:text-[#00AEEF]'} transition-colors`}
-                          title={electionStatus !== 'active' ? 'Voting is closed' : 'Copy Voting Link'}
+                          className="p-1.5 text-gray-400 hover:text-[#00AEEF] transition-colors"
+                          title="Copy Voting Link"
                         >
                           <FiCopy />
                         </button>

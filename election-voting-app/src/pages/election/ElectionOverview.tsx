@@ -185,13 +185,11 @@ export const ElectionOverview: React.FC = () => {
             </div>
 
             <div className="flex gap-6 mt-6">
-              {(election.status === 'active' || election.status === 'completed') && (
                 <div className="bg-[#00D02D] rounded p-6 text-white flex-1 text-center shadow-sm">
                   <FiCheckCircle className="opacity-10 w-12 h-12 mx-auto" />
                   <div className="text-4xl font-bold mt-2">{participationRate}%</div>
                   <div className="text-xs font-bold uppercase tracking-widest mt-2">Participation ({stats.votesCast} Voters)</div>
                 </div>
-              )}
 
               <div className="bg-[#FF6A13] rounded p-6 text-white flex-1 text-center shadow-sm">
                 <FiUsers className="opacity-10 w-12 h-12 mx-auto" />
@@ -281,7 +279,7 @@ export const ElectionOverview: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {(election.status === 'active' || election.status === 'completed') && (
+              {election.status === 'active' && (
                 <div className="bg-[#00D02D] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
                   <FiCheckCircle className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
                   <div className="text-5xl font-bold relative z-10">{participationRate}%</div>

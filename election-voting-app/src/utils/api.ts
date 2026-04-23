@@ -214,6 +214,13 @@ export const api = {
   },
 
   async addVoter(voterData: any) {
+    // Prevent adding voters to completed elections
+    if (!voterData || !voterData.election_id) throw new Error('Missing election_id');
+    const election = await this.getElectionById(voterData.election_id);
+    if (election && election.status === 'completed') {
+      throw new Error('Cannot add voters to a completed election.');
+    }
+
     const { data, error } = await supabase
       .from('voters')
       .insert([voterData])
@@ -225,6 +232,14 @@ export const api = {
   },
 
   async deleteVoter(id: string) {
+    // Ensure the voter isn't deleted for a running or completed election
+    const voter = await this.getVoterById(id);
+    if (!voter) throw new Error('Voter not found');
+    const election = await this.getElectionById(voter.election_id);
+    if (election && (election.status === 'active' || election.status === 'completed')) {
+      throw new Error('Cannot delete voters while the election is running or completed.');
+    }
+
     const { error } = await supabase
       .from('voters')
       .delete()
@@ -247,6 +262,11 @@ export const api = {
   },
 
   async deleteAllVoters(electionId: string) {
+    const election = await this.getElectionById(electionId);
+    if (election && (election.status === 'active' || election.status === 'completed')) {
+      throw new Error('Cannot delete voters while the election is running or completed.');
+    }
+
     const { error } = await supabase
       .from('voters')
       .delete()
@@ -257,6 +277,14 @@ export const api = {
   },
 
   async bulkAddVoters(voters: any[]) {
+    if (!voters || !voters.length) return [];
+    const electionId = voters[0].election_id;
+    if (!electionId) throw new Error('Missing election_id for bulk add');
+    const election = await this.getElectionById(electionId);
+    if (election && election.status === 'completed') {
+      throw new Error('Cannot import voters into a completed election.');
+    }
+
     const { data, error } = await supabase
       .from('voters')
       .insert(voters)
