@@ -9,6 +9,7 @@ interface ModalProps {
   footer?: React.ReactNode;
   maxWidth?: string;
   headerBgColor?: string;
+  headerClassName?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   maxWidth = 'max-w-3xl',
   headerBgColor = 'bg-[#00AEEF]',
+  headerClassName = '',
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -40,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full ${maxWidth}`}>
           {/* Header */}
-          <div className={`${headerBgColor} px-6 py-4 flex items-center justify-between`}>
+          <div className={`${headerBgColor} ${headerClassName} px-6 py-4 flex items-center justify-between`}>
             <h3 className="text-xl font-medium text-white">{title}</h3>
             <button
               onClick={onClose}

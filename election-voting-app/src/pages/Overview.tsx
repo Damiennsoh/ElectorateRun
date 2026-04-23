@@ -16,7 +16,7 @@ const mockChartData = [
 
 export const Overview: React.FC = () => {
   return (
-    <MainLayout title="(PHASE_3) MMDU INTERNATIONAL STUDENTS LEADERSHIP ELECTION-2024" status="completed">
+    <MainLayout>
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="mb-6">

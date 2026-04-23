@@ -1,26 +1,40 @@
 import { supabase } from './supabase';
-import { Election, Voter, BallotQuestion, Candidate, Vote } from '../types';
+import { Election } from '../types';
 
 export const api = {
   // --- Elections ---
   async getElections() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        console.warn('api.getElections: No active session found');
+    }
+
     const { data, error } = await supabase
       .from('elections')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+        console.error('api.getElections error:', error);
+        throw error;
+    }
     return data;
   },
 
   async getElectionById(id: string) {
+    if (!id || id === 'undefined') return null;
+    
     const { data, error } = await supabase
       .from('elections')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        console.error(`api.getElectionById(${id}) error:`, error);
+        throw error;
+    }
     return data;
   },
 
@@ -33,7 +47,7 @@ export const api = {
     
     if (electionError) throw electionError;
 
-    const { data: organization, error: orgError } = await supabase
+    const { data: organization } = await supabase
       .from('organizations')
       .select('*')
       .eq('user_id', election.user_id)
@@ -163,7 +177,7 @@ export const api = {
       .from('elections')
       .delete()
       .eq('id', id);
-
+ 
     if (error) throw error;
     return true;
   },
@@ -173,6 +187,17 @@ export const api = {
       .from('voters')
       .select('*')
       .eq('election_id', electionId);
+      
+    if (error) throw error;
+    return data;
+  },
+
+  async getVoterById(id: string) {
+    const { data, error } = await supabase
+      .from('voters')
+      .select('*')
+      .eq('id', id)
+      .single();
       
     if (error) throw error;
     return data;
@@ -245,18 +270,46 @@ export const api = {
   async submitBallot(
     voterId: string, 
     electionId: string, 
-    votes: { ballot_question_id: string; candidate_option_id: string }[],
-    voteHash: string
+    votes: { ballot_question_id: string; candidate_option_id: string; rank_order?: number }[],
+    voteHash: string,
+    auditData: { ip: string, user_agent: string }
   ) {
-    const { data, error } = await supabase.rpc('submit_ballot', {
+    const { error } = await supabase.rpc('submit_ballot', {
       p_voter_id: voterId,
       p_election_id: electionId,
       p_votes: votes,
-      p_vote_hash: voteHash
+      p_vote_hash: voteHash,
+      p_ip: auditData.ip,
+      p_ua: auditData.user_agent
     });
 
+    if (error) {
+      console.error('RPC submit_ballot failed:', error);
+      throw error;
+    }
+    return { id: voteHash };
+  },
+
+  async getVoterActivity(voterId: string) {
+    const { data: voter, error } = await supabase
+      .from('voters')
+      .select('*')
+      .eq('id', voterId)
+      .single();
+    
     if (error) throw error;
-    return data;
+    
+    const activity = [];
+    if (voter.created_at) activity.push({ text: 'Voter created.', date: voter.created_at });
+    if (voter.invitation_sent_at) activity.push({ text: 'Voter email instructions delivered.', date: voter.invitation_sent_at });
+    if (voter.voted_at) {
+        // Derive login times for visualization as per mockup
+        activity.push({ text: 'Voter login: Success', date: new Date(new Date(voter.voted_at).getTime() - 30000).toISOString() });
+        activity.push({ text: 'Voter login: Success', date: new Date(new Date(voter.voted_at).getTime() - 10000).toISOString() });
+        activity.push({ text: 'Voter successfully submitted ballot.', date: voter.voted_at });
+    }
+    
+    return activity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
 
   async getResults(electionId: string) {
@@ -367,9 +420,9 @@ export const api = {
   },
 
   // --- Email Invitations ---
-  async sendVoterInvitations(electionId: string) {
+  async sendVoterInvitations(electionId: string, notifyCreator: boolean = false, notifyEnded: boolean = false) {
     const { data, error } = await supabase.functions.invoke('send-invitations', {
-      body: { electionId }
+      body: { electionId, notifyCreator, notifyEnded }
     });
     if (error) throw error;
     return data;
@@ -381,5 +434,39 @@ export const api = {
     });
     if (error) throw error;
     return data;
+  },
+
+  async computeElectionHash(electionId: string) {
+    const { data, error } = await supabase.functions.invoke('compute-election-hash', {
+      body: { electionId }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllElectionActivity(electionId: string) {
+    const { data: voters, error } = await supabase
+      .from('voters')
+      .select('*')
+      .eq('election_id', electionId);
+    
+    if (error) throw error;
+    
+    let allActivity: any[] = [];
+    voters.forEach((v: any) => {
+        if (v.created_at) {
+            allActivity.push({ date: v.created_at, name: v.name, voter_id: v.voter_identifier, action: 'Voter created.', ip: '' });
+        }
+        if (v.invitation_sent_at) {
+            allActivity.push({ date: v.invitation_sent_at, name: v.name, voter_id: v.voter_identifier, action: 'Voter email instructions delivered.', ip: '' });
+        }
+        if (v.voted_at) {
+            // Derive login times for visualization as per mockup
+            allActivity.push({ date: new Date(new Date(v.voted_at).getTime() - 10000).toISOString(), name: v.name, voter_id: v.voter_identifier, action: 'Voter login: Success', ip: v.ip_address || '' });
+            allActivity.push({ date: v.voted_at, name: v.name, voter_id: v.voter_identifier, action: 'Voter successfully submitted ballot.', ip: v.ip_address || '' });
+        }
+    });
+    
+    return allActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 };

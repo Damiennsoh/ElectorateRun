@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../common/Modal';
-import { FiCheckCircle, FiUser, FiX } from 'react-icons/fi';
+import { FiCheckCircle, FiUser } from 'react-icons/fi';
 import { CandidateOption } from '../../types';
 
 interface OptionDetailsModalProps {

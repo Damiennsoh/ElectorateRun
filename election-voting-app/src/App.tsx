@@ -21,12 +21,11 @@ import { Ballot } from './pages/election/Ballot';
 import { HelpAndSupport } from './pages/help/HelpAndSupport';
 import { ImportVotersInstructions } from './pages/help/ImportVotersInstructions';
 import { RankedChoiceQuestion } from './pages/election/RankedChoiceQuestion';
+import { FraudAnalysis } from './pages/election/FraudAnalysis';
 import { LaunchElection } from './pages/election/LaunchElection';
 import { AddOns } from './pages/election/AddOns';
 import { Preview } from './pages/election/Preview';
 import { Voters } from './pages/election/Voters';
-import { ElectionSidebarLayout } from './components/layout/ElectionSidebarLayout';
-import { FiEye, FiArrowRight } from 'react-icons/fi';
 import { ElectionSettingsLayout } from './pages/election/settings/ElectionSettingsLayout';
 import { GeneralSettings as ElectionGeneralSettings } from './pages/election/settings/GeneralSettings';
 import { DatesSettings as ElectionDatesSettings } from './pages/election/settings/DatesSettings';
@@ -36,12 +35,16 @@ import { EmailSettings as ElectionEmailSettings } from './pages/election/setting
 import { ResultsSettings as ElectionResultsSettings } from './pages/election/settings/ResultsSettings';
 import { DuplicateElection as ElectionDuplicateElection } from './pages/election/settings/DuplicateElection';
 import { DeleteElection as ElectionDeleteElection } from './pages/election/settings/DeleteElection';
+import { CloseElection as ElectionCloseElection } from './pages/election/settings/CloseElection';
 
+import { PublicResults } from './pages/election/PublicResults';
+import { ValidateElection } from './pages/election/ValidateElection';
+
+// Voting Interface
 import { VoteLogin } from './pages/voting/VoteLogin';
 import { VoteBallot } from './pages/voting/VoteBallot';
 
-// Placeholder components for other routes
-const FraudAnalysis = () => <ElectionSidebarLayout><div className="p-8 text-2xl font-bold">Fraud Analysis</div></ElectionSidebarLayout>;
+// Placeholders for remaining nested routes
 const DatesSettings = () => <div className="p-8 text-xl font-bold">Dates Settings</div>;
 const VotersSettings = () => <div className="p-8 text-xl font-bold">Voters Settings</div>;
 const MessagesSettings = () => <div className="p-8 text-xl font-bold">Messages Settings</div>;
@@ -49,29 +52,23 @@ const ResultsSettings = () => <div className="p-8 text-xl font-bold">Results Set
 const DuplicateElection = () => <div className="p-8 text-xl font-bold">Duplicate Election</div>;
 const ArchiveElection = () => <div className="p-8 text-xl font-bold">Archive Election</div>;
 const DeleteElection = () => <div className="p-8 text-xl font-bold">Delete Election</div>;
-const BillingSettingsRoute = () => <BillingSettings />;
-const SecuritySettingsRoute = () => <SecuritySettings />;
 
-// Election Specific Routes (Sidebar Layout)
-const ElectionBallot = () => <Ballot />;
-const ElectionVoters = () => <Voters />;
-const ElectionPreview = () => <Preview />;
-const ElectionAddOns = () => <AddOns />;
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -112,10 +109,13 @@ const App: React.FC = () => {
         {/* Public Voting Routes */}
         <Route path="/vote/:id" element={<VoteLogin />} />
         <Route path="/vote/:id/ballot" element={<VoteBallot />} />
+        <Route path="/election/:id/results/public" element={<PublicResults />} />
+        <Route path="/election/:id/validate" element={<ValidateElection />} />
         
         <Route path="/election/:id/settings" element={<ProtectedRoute><ElectionSettingsLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="general" replace />} />
           <Route path="general" element={<ElectionGeneralSettings />} />
+          <Route path="close" element={<ElectionCloseElection />} />
           <Route path="dates" element={<ElectionDatesSettings />} />
           <Route path="voters" element={<ElectionVotersSettings />} />
           <Route path="messages" element={<ElectionMessagesSettings />} />

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
-import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList, FiClock } from 'react-icons/fi';
+import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList, FiCheckCircle } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election } from '../../types';
 
 export const ElectionOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [election, setElection] = useState<Election | null>(null);
-  const [stats, setStats] = useState({ voters: 0, questions: 0, options: 0 });
+  const [stats, setStats] = useState({ voters: 0, questions: 0, options: 0, votesCast: 0 });
   const [orgSubdomain, setOrgSubdomain] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
@@ -20,29 +20,57 @@ export const ElectionOverview: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!election?.start_date) return;
+    if (!election?.end_date) return;
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
-      const start = new Date(election.start_date).getTime();
-      const diff = start - now;
+      const end = new Date(election.end_date).getTime();
+      const start = new Date(election.start_date!).getTime();
+      
+      const isRunning = election.status === 'active';
+      const isScheduled = election.status === 'draft' && now < start;
 
-      if (diff <= 0) {
-        setCountdown('Election has started');
-        clearInterval(timer);
-        return;
+      if (isRunning) {
+        const diff = end - now;
+        if (diff <= 0) {
+            setCountdown('Election has ended');
+            clearInterval(timer);
+            handleAutoClose();
+            return;
+        }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdown(`Your election is running and will automatically end in ${days > 0 ? days + ' days ' : ''}${hours} hours ${minutes} minutes ${seconds} seconds`);
+      } else if (isScheduled) {
+        const diff = start - now;
+        if (diff <= 0) {
+            setCountdown('Election is starting...');
+            clearInterval(timer);
+            return;
+        }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdown(`Your election is scheduled to start in ${days > 0 ? days + ' day ' : ''}${hours} hour ${minutes} minutes ${seconds} seconds`);
       }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setCountdown(`Your election is scheduled to start in ${days > 0 ? days + ' day ' : ''}${hours} hour ${minutes} minutes ${seconds} seconds`);
     }, 1000);
 
     return () => clearInterval(timer);
   }, [election]);
+
+  const handleAutoClose = async () => {
+    if (!id || election?.status !== 'active') return;
+    try {
+      await api.updateElection(id, { status: 'completed' });
+      await api.sendVoterInvitations(id, false, true);
+      fetchElectionDetails(id);
+    } catch (err) {
+      console.error("Error during auto-close:", err);
+    }
+  };
 
   const fetchElectionDetails = async (electionId: string) => {
     try {
@@ -60,10 +88,13 @@ export const ElectionOverview: React.FC = () => {
         return acc + (question.candidate_options?.length || 0);
       }, 0);
 
+      const votesCast = votersData?.filter((v: any) => v.has_voted).length || 0;
+
       setStats({
         voters: votersData?.length || 0,
         questions: questionsData?.length || 0,
-        options: totalOptions
+        options: totalOptions,
+        votesCast
       });
     } catch (error) {
       console.error('Error fetching election details:', error);
@@ -74,15 +105,17 @@ export const ElectionOverview: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Custom toast or alert
+    alert('Copied to clipboard!');
   };
 
   if (loading) return <ElectionSidebarLayout><div className="p-20 text-center text-gray-500">Loading...</div></ElectionSidebarLayout>;
   if (!election) return <ElectionSidebarLayout><div className="p-20 text-center text-red-500">Election not found.</div></ElectionSidebarLayout>;
 
   const baseDomain = 'electionrunner.com';
-  const electionUrl = `https://vote.${baseDomain}/election/ILOX8`; // Mocking the hash for design accuracy
+  const electionUrl = `https://vote.${baseDomain}/election/ILOX8`; 
   const orgUrl = `https://${orgSubdomain || 'mmuleadership'}.${baseDomain}`;
+
+  const participationRate = stats.voters > 0 ? Math.round((stats.votesCast / stats.voters) * 100) : 0;
 
   return (
     <ElectionSidebarLayout>
@@ -91,15 +124,50 @@ export const ElectionOverview: React.FC = () => {
           <FiHome className="text-gray-800" /> Overview
         </h2>
 
-        {/* Scheduled Banner */}
+        {/* Status Banners */}
         {election.status === 'draft' && (
             <div className="bg-[#FFF5EB] border border-[#FFD8B1] p-4 rounded text-center text-[#975A16] font-medium text-[15px] flex items-center justify-center gap-2">
                 {countdown || 'Election is being prepared'}
             </div>
         )}
 
+        {election.status === 'active' && (
+            <div className="bg-[#E6F9EA] border border-[#00D02D]/30 p-4 rounded text-center text-[#00D02D] font-medium text-[15px] flex items-center justify-center gap-2">
+                {countdown || 'Your election is running'}
+            </div>
+        )}
+
+        {election.status === 'completed' && (
+            <div className="bg-[#00D02D] p-4 rounded text-center text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm animate-fade-in">
+                This election ended on {new Date(election.end_date!).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })}. 
+                <button onClick={() => window.location.href=`/election/${id}/results`} className="underline ml-2 hover:opacity-80 transition-opacity">View Results »</button>
+            </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
+             {/* Charts Section for Running Election */}
+             {election.status === 'active' && (
+                <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
+                    </div>
+                    <div className="p-8 h-[250px] flex items-end justify-between relative">
+                        {/* Placeholder for chart lines */}
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none">
+                            <svg width="100%" height="100%" className="opacity-20">
+                                <path d="M0 200 Q 150 150, 300 180 T 600 100 T 900 140" fill="none" stroke="#00AEEF" strokeWidth="2" />
+                            </svg>
+                        </div>
+                        <div className="w-full h-[1px] bg-[#00AEEF] absolute bottom-8 opacity-50"></div>
+                        {/* Fake X-axis markers */}
+                        {[...Array(7)].map((_, i) => (
+                            <div key={i} className="w-2 h-2 rounded-full bg-[#00AEEF] mb-[-4px] relative z-10"></div>
+                        ))}
+                    </div>
+                </div>
+             )}
+
              <div className="bg-white border border-gray-200 rounded shadow-sm">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                     <FiGlobe className="text-gray-800" />
@@ -146,6 +214,15 @@ export const ElectionOverview: React.FC = () => {
           </div>
 
           <div className="space-y-4">
+             {/* Participation Card - Only for Active/Completed */}
+             {(election.status === 'active' || election.status === 'completed') && (
+                <div className="bg-[#00D02D] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
+                    <FiCheckCircle className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
+                    <div className="text-5xl font-bold relative z-10">{participationRate}%</div>
+                    <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Participation ({stats.votesCast} Voters)</div>
+                </div>
+             )}
+
              <div className="bg-[#FF6A13] rounded p-6 text-white relative overflow-hidden flex flex-col items-end shadow-sm">
                 <FiUsers className="absolute left-[-20px] top-[-10px] w-32 h-32 opacity-10 rotate-12" />
                 <div className="text-5xl font-bold relative z-10">{stats.voters}</div>

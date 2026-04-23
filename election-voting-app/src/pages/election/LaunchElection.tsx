@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FiSend, FiEdit, FiInfo, FiCheckCircle, FiArrowRight, FiCheck, FiShoppingBag, FiGlobe } from 'react-icons/fi';
+import { FiSend, FiEdit, FiCheckCircle, FiArrowRight, FiCheck, FiShoppingBag } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { api } from '../../utils/api';
 import { Election, BallotQuestion } from '../../types';
@@ -83,7 +83,12 @@ export const LaunchElection: React.FC = () => {
     if (!id) return;
     setLaunching(true);
     try {
+      // 1. Update status to active
       await api.updateElection(id, { status: 'active' });
+      
+      // 2. Trigger launch notifications (to creator and initial voters)
+      await api.sendVoterInvitations(id, true);
+      
       alert('Election launched successfully!');
       navigate(`/election/${id}`);
     } catch (error) {
@@ -213,7 +218,7 @@ export const LaunchElection: React.FC = () => {
                         </div>
                     </div>
 
-                    {questions.map((q, idx) => (
+                    {questions.map((q) => (
                         <div key={q.id} className="border border-gray-200 rounded overflow-hidden mb-6">
                             <div className="bg-white border-b border-gray-100 p-6">
                                 <h4 className="text-xl font-bold text-gray-800">{q.title}</h4>

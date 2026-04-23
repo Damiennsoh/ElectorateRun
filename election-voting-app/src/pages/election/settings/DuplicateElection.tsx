@@ -38,8 +38,8 @@ export const DuplicateElection: React.FC = () => {
       const newElection = await api.createElection({
         title: newTitle,
         description: election.description,
-        startDate: election.startDate,
-        endDate: election.endDate,
+        start_date: election.start_date,
+        end_date: election.end_date,
         timezone: election.timezone,
         status: 'building',
         settings: election.settings

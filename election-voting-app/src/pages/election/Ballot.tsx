@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiList, FiPlus, FiUploadCloud, FiMoreVertical, FiTrash2, FiDownload, FiInfo, FiPaperclip, FiUsers, FiArrowUp, FiArrowDown, FiEdit, FiCheckCircle, FiEdit3 } from 'react-icons/fi';
+import { FiList, FiPlus, FiUploadCloud, FiMoreVertical, FiTrash2, FiDownload, FiPaperclip, FiUsers, FiEdit, FiCheckCircle, FiEdit3, FiLoader } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { EditBallotModal } from '../../components/election/EditBallotModal';
 import { BulkAddModal } from '../../components/election/BulkAddModal';
@@ -544,7 +544,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <FiUsers className="text-gray-400" />
+                  <FiUsers className="text-[#333]" />
                   Bulk Add Options
                 </button>
                 <div className="border-t border-gray-100 my-1"></div>
@@ -639,7 +639,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                         <img src={option.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="text-gray-300">
-                          {option.type === 'write-in' ? <FiEdit3 className="text-xl" /> : <FiUser className="text-xl" />}
+                          {option.type === 'write-in' ? <FiEdit3 className="text-xl" /> : <FiUsers className="text-xl" />}
                         </div>
                       )}
                     </div>

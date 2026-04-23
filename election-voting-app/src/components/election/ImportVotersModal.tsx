@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
-import { FiUploadCloud, FiX, FiCheckCircle, FiFileText, FiAlertCircle, FiInfo, FiCopy } from 'react-icons/fi';
+import { FiUploadCloud, FiCheckCircle, FiFileText, FiAlertCircle, FiCopy } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import Papa from 'papaparse';
 

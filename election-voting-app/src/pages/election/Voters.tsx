@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiUsers, FiUploadCloud, FiPlus, FiTrash2, FiSearch, FiEdit2, FiMoreVertical, FiDownload, FiCheck, FiX, FiMail, FiCopy } from 'react-icons/fi';
+import { FiUsers, FiUploadCloud, FiPlus, FiTrash2, FiSearch, FiEdit2, FiMoreVertical, FiDownload, FiCheck, FiCopy, FiFileText, FiSend } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { AddVoterModal } from '../../components/election/AddVoterModal';
 import { ImportVotersModal } from '../../components/election/ImportVotersModal';
@@ -16,8 +16,8 @@ export const Voters: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
   const [voters, setVoters] = useState<Voter[]>([]);
+  const [electionStatus, setElectionStatus] = useState('draft');
   const [loading, setLoading] = useState(true);
-  const [sendingInvites, setSendingInvites] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -40,8 +40,12 @@ export const Voters: React.FC = () => {
 
   const fetchVoters = async (id: string) => {
     try {
-      const data = await api.getVoters(id);
-      setVoters(data as unknown as Voter[]);
+      const [votersData, electionData] = await Promise.all([
+        api.getVoters(id),
+        api.getElectionById(id)
+      ]);
+      setVoters(votersData as unknown as Voter[]);
+      setElectionStatus(electionData.status);
     } catch (error) {
       console.error('Error fetching voters:', error);
     } finally {
@@ -49,22 +53,6 @@ export const Voters: React.FC = () => {
     }
   };
 
-  const handleSendInvitations = async () => {
-    if (!electionId) return;
-    if (!window.confirm('Send email invitations to all voters who haven\'t received one yet?')) return;
-    
-    setSendingInvites(true);
-    try {
-      await api.sendVoterInvitations(electionId);
-      alert('Invitations are being sent!');
-      fetchVoters(electionId);
-    } catch (error: any) {
-      console.error('Error sending invitations:', error);
-      alert('Note: Supabase Edge Function "send-invitations" needs to be deployed to handle email sending.');
-    } finally {
-      setSendingInvites(false);
-    }
-  };
 
   const handleAddVoter = async (voterData: any) => {
     if (!electionId) return;
@@ -97,6 +85,10 @@ export const Voters: React.FC = () => {
   };
 
   const handleDeleteVoter = async (voterId: string) => {
+    if (electionStatus === 'active' || electionStatus === 'completed') {
+        alert('Voters cannot be deleted while the election is running or completed.');
+        return;
+    }
     if (!window.confirm('Are you sure you want to delete this voter?')) return;
     try {
       await api.deleteVoter(voterId);
@@ -108,6 +100,10 @@ export const Voters: React.FC = () => {
 
   const handleDeleteAllVoters = async () => {
     if (!electionId) return;
+    if (electionStatus === 'active' || electionStatus === 'completed') {
+        alert('Voters cannot be deleted while the election is running or completed.');
+        return;
+    }
     if (!window.confirm('WARNING: Are you sure you want to delete ALL voters for this election? This cannot be undone.')) return;
     
     try {
@@ -122,19 +118,45 @@ export const Voters: React.FC = () => {
     }
   };
 
+  const handleSendReminders = async () => {
+    if (!electionId) return;
+    if (!window.confirm('Send email reminders to all voters who haven\'t voted yet?')) return;
+    
+    try {
+      await api.sendVoterReminders(electionId);
+      alert('Reminders are being sent!');
+    } catch (error: any) {
+      console.error('Error sending reminders:', error);
+      alert('Note: Supabase Edge Function "send-reminders" needs to be deployed.');
+    }
+  };
+
   const handleExportVoters = () => {
     if (!voters.length) return;
 
-    const exportData = voters.map(v => ({
-      'Voted?': v.has_voted ? 'Yes' : 'No',
-      'Name': v.name,
-      'Voter Identifier': v.voter_identifier,
-      'Voter Key': v.voter_key,
-      'Email': v.email || '',
-      'Vote Weight': v.vote_weight || 1,
-      'Invitation Sent': v.invitation_sent_at ? 'Yes' : 'No',
-      'Voting URL': `${window.location.origin}/vote/${electionId}?vID=${v.voter_identifier}&vKey=${v.voter_key}`
-    }));
+    let exportData = [];
+    
+    if (electionStatus === 'active' || electionStatus === 'completed') {
+        // High-fidelity export for active/completed elections (as per Image 10)
+        exportData = voters.map(v => ({
+            'Voted?': v.has_voted ? 'Yes' : 'No',
+            'Name': v.name,
+            'Voter Identifier': v.voter_identifier,
+            'Voter Key': v.voter_key,
+            'Email': v.email || '',
+            'Vote Weight': v.vote_weight || 1,
+            'Voting URL': `${window.location.origin}/vote/${electionId}?vID=${v.voter_identifier}&vKey=${v.voter_key}`
+        }));
+    } else {
+        // Basic export for building phase
+        exportData = voters.map(v => ({
+            'Name': v.name,
+            'Voter Identifier': v.voter_identifier,
+            'Voter Key': v.voter_key,
+            'Email': v.email || '',
+            'Vote Weight': v.vote_weight || 1
+        }));
+    }
 
     const csv = Papa.unparse(exportData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -147,6 +169,38 @@ export const Voters: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     setShowActionsMenu(false);
+  };
+
+  const handleExportVoterLogs = async () => {
+    if (!electionId) return;
+    try {
+      setLoading(true);
+      const activity = await api.getAllElectionActivity(electionId);
+      
+      const exportData = activity.map(a => ({
+        'Date': new Date(a.date).toLocaleString(),
+        'Voter Name': a.name,
+        'Voter ID': a.voter_id,
+        'Action': a.action,
+        'IP Address': a.ip
+      }));
+
+      const csv = Papa.unparse(exportData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `voter_activity_logs_${electionId}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowActionsMenu(false);
+    } catch (err) {
+      console.error("Error exporting logs:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImportVoters = async (data: any[]) => {
@@ -188,15 +242,15 @@ export const Voters: React.FC = () => {
           <div className="flex items-center gap-3">
             <FiUsers className="text-2xl text-gray-700" />
             <h1 className="text-2xl font-bold text-gray-800">Voters ({voters.length})</h1>
+            <span className={`px-2 py-0.5 rounded text-[11px] font-bold border capitalize ${
+                electionStatus === 'active' ? 'bg-green-50 text-green-600 border-green-200' : 
+                electionStatus === 'completed' ? 'bg-gray-50 text-gray-600 border-gray-200' :
+                'bg-blue-50 text-blue-600 border-blue-200'
+            }`}>
+                {electionStatus === 'active' ? 'Running' : electionStatus}
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-                onClick={handleSendInvitations}
-                disabled={sendingInvites || voters.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold text-sm shadow-sm transition-all disabled:opacity-50"
-            >
-                <FiMail /> {sendingInvites ? 'Sending...' : 'Send Invitations'}
-            </button>
             <button 
               onClick={() => setIsImportModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-[#00AEEF] rounded hover:bg-gray-50 font-bold text-sm shadow-sm transition-all"
@@ -221,9 +275,17 @@ export const Voters: React.FC = () => {
                   <button onClick={handleExportVoters} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
                     <FiDownload className="text-gray-400" /> Export Voters
                   </button>
-                  <button onClick={handleDeleteAllVoters} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50">
-                    <FiTrash2 className="text-red-400" /> Delete All Voters
+                  <button onClick={handleExportVoterLogs} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                    <FiFileText className="text-gray-400" /> Export Voter Logs
                   </button>
+                  <button onClick={handleSendReminders} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#00AEEF] hover:bg-blue-50 border-b border-gray-100">
+                    <FiSend className="text-[#00AEEF]" /> Send Reminders
+                  </button>
+                  {electionStatus !== 'active' && electionStatus !== 'completed' && (
+                    <button onClick={handleDeleteAllVoters} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                      <FiTrash2 className="text-red-400" /> Delete All Voters
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -251,16 +313,25 @@ export const Voters: React.FC = () => {
           <table className="w-full border-collapse">
             <thead className="bg-[#1D2B36] text-white">
               <tr>
+                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider">Voted?</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider">Name</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider">Voter ID</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredVoters.map((voter) => (
                 <tr key={voter.id} className="hover:bg-yellow-50 transition-colors group">
+                  <td className="px-6 py-4">
+                    {voter.has_voted ? (
+                        <div className="w-5 h-5 bg-[#00D02D] rounded-full flex items-center justify-center">
+                            <FiCheck className="text-white text-[10px]" />
+                        </div>
+                    ) : (
+                        <div className="w-5 h-5 border-2 border-gray-100 rounded-full" />
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="text-[14px] text-gray-700 font-medium">{voter.name}</div>
                   </td>
@@ -269,18 +340,6 @@ export const Voters: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-[14px] text-gray-600">{voter.email || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                        {voter.has_voted ? (
-                            <span className="text-[11px] font-bold text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded border border-green-200">Voted</span>
-                        ) : (
-                            <span className="text-[11px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded border border-gray-200">Not Voted</span>
-                        )}
-                        {voter.invitation_sent_at && (
-                            <FiCheck className="text-blue-500" title="Invitation Sent" />
-                        )}
-                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 group-hover:visible visible">
@@ -297,15 +356,19 @@ export const Voters: React.FC = () => {
                                 setIsEditModalOpen(true);
                             }}
                             className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Edit Voter"
                         >
                             <FiEdit2 />
                         </button>
-                        <button 
-                            onClick={() => handleDeleteVoter(voter.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
-                        >
-                            <FiTrash2 />
-                        </button>
+                        {electionStatus !== 'active' && electionStatus !== 'completed' && (
+                          <button 
+                              onClick={() => handleDeleteVoter(voter.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                              title="Delete Voter"
+                          >
+                              <FiTrash2 />
+                          </button>
+                        )}
                     </div>
                   </td>
                 </tr>
@@ -345,6 +408,7 @@ export const Voters: React.FC = () => {
         }}
         voter={selectedVoter}
         onSave={handleUpdateVoter}
+        electionStatus={electionStatus}
       />
     </ElectionSidebarLayout>
   );

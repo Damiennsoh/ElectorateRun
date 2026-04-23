@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   FiHome, FiPieChart, FiShield, FiUsers, 
-  FiList, FiPackage, FiSettings, FiChevronDown,
-  FiCalendar, FiMessageSquare, FiMail, FiCopy,
-  FiArchive, FiTrash2, FiCheckCircle
+  FiList, FiPackage, FiSettings, FiChevronDown
 } from 'react-icons/fi';
 
 interface SubMenuItem {

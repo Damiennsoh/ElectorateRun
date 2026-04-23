@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiCalendar, FiClock } from 'react-icons/fi';
 import { api } from '../../../utils/api';
-import { Election } from '../../../types';
+
 
 export const DatesSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -107,11 +107,31 @@ export const DatesSettings: React.FC = () => {
             onChange={(e) => setTimezone(e.target.value)}
             className="w-full px-3 py-2 text-[14px] text-gray-700 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:outline-none focus:border-[#00AEEF] transition-colors"
           >
-            <option value="(GMT+0:00) Africa/Abidjan">(GMT+0:00) Africa/Abidjan</option>
-            <option value="(GMT+0:00) Europe/London">(GMT+0:00) Europe/London</option>
-            <option value="(GMT-5:00) America/New_York">(GMT-5:00) America/New_York</option>
-            <option value="(GMT+8:00) Asia/Singapore">(GMT+8:00) Asia/Singapore</option>
+            <option value="(GMT-10:00) Pacific/Honolulu">(GMT-10:00) Pacific/Honolulu</option>
+            <option value="(GMT-08:00) America/Los_Angeles">(GMT-08:00) America/Los_Angeles</option>
+            <option value="(GMT-07:00) America/Denver">(GMT-07:00) America/Denver</option>
+            <option value="(GMT-06:00) America/Chicago">(GMT-06:00) America/Chicago</option>
+            <option value="(GMT-05:00) America/New_York">(GMT-05:00) America/New_York</option>
+            <option value="(GMT-04:00) America/Halifax">(GMT-04:00) America/Halifax</option>
+            <option value="(GMT-03:00) America/Sao_Paulo">(GMT-03:00) America/Sao_Paulo</option>
+            <option value="(GMT+00:00) UTC">(GMT+00:00) UTC</option>
+            <option value="(GMT+00:00) Europe/London">(GMT+00:00) Europe/London</option>
+            <option value="(GMT+01:00) Europe/Paris">(GMT+01:00) Europe/Paris</option>
+            <option value="(GMT+01:00) Africa/Lagos">(GMT+01:00) Africa/Lagos</option>
+            <option value="(GMT+02:00) Europe/Berlin">(GMT+02:00) Europe/Berlin</option>
+            <option value="(GMT+02:00) Africa/Johannesburg">(GMT+02:00) Africa/Johannesburg</option>
+            <option value="(GMT+02:00) Africa/Cairo">(GMT+02:00) Africa/Cairo</option>
+            <option value="(GMT+03:00) Europe/Moscow">(GMT+03:00) Europe/Moscow</option>
+            <option value="(GMT+03:00) Asia/Riyadh">(GMT+03:00) Asia/Riyadh</option>
+            <option value="(GMT+03:00) Africa/Nairobi">(GMT+03:00) Africa/Nairobi</option>
+            <option value="(GMT+04:00) Asia/Dubai">(GMT+04:00) Asia/Dubai</option>
+            <option value="(GMT+05:30) Asia/Kolkata">(GMT+05:30) Asia/Kolkata</option>
+            <option value="(GMT+07:00) Asia/Bangkok">(GMT+07:00) Asia/Bangkok</option>
+            <option value="(GMT+08:00) Asia/Singapore">(GMT+08:00) Asia/Singapore</option>
+            <option value="(GMT+08:00) Asia/Shanghai">(GMT+08:00) Asia/Shanghai</option>
+            <option value="(GMT+09:00) Asia/Tokyo">(GMT+09:00) Asia/Tokyo</option>
             <option value="(GMT+10:00) Australia/Sydney">(GMT+10:00) Australia/Sydney</option>
+            <option value="(GMT+12:00) Pacific/Auckland">(GMT+12:00) Pacific/Auckland</option>
           </select>
         </div>
 

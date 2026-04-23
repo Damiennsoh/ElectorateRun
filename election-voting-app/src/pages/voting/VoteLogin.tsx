@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FiLock, FiUser, FiArrowRight, FiCheckCircle, FiAlertCircle, FiAlertTriangle, FiX, FiGlobe } from 'react-icons/fi';
+import { FiCheckCircle, FiAlertTriangle, FiX, FiGlobe } from 'react-icons/fi';
 import { api } from '../../utils/api';
 import { Election } from '../../types';
 
@@ -21,21 +21,31 @@ export const VoteLogin: React.FC = () => {
 
   useEffect(() => {
     if (electionId) {
-      fetchData();
-      
       const vID = queryParams.get('vID');
       const vKey = queryParams.get('vKey');
+      
       if (vID) setVoterId(vID);
       if (vKey) setVoterKey(vKey);
+
+      fetchData(vID);
     }
   }, [electionId]);
 
-  const fetchData = async () => {
+  const fetchData = async (autoVID?: string | null) => {
     try {
       const data = await api.getElectionWithOrganization(electionId!);
       setElection(data);
       if (data.organization) {
         setOrganization(data.organization);
+      }
+
+      // Check for auto-login and already voted state
+      if (autoVID) {
+          const voters = await api.getVoters(electionId!);
+          const voter = voters.find(v => v.voter_identifier.toLowerCase() === autoVID.toLowerCase());
+          if (voter && voter.has_voted) {
+              setError('You have already voted in this election.');
+          }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -82,7 +92,7 @@ export const VoteLogin: React.FC = () => {
       }
 
       if (voter.has_voted) {
-        throw new Error('This voter has already cast a ballot in this election.');
+        throw new Error('You have already voted in this election.');
       }
 
       localStorage.setItem(`voter_session_${electionId}`, JSON.stringify(voter));
@@ -131,6 +141,7 @@ export const VoteLogin: React.FC = () => {
                     <div className="bg-red-50 border border-red-100 p-4 rounded flex items-start gap-3">
                         <FiAlertTriangle className="text-red-500 text-2xl mt-1 flex-shrink-0" />
                         <p className="text-sm text-red-800 leading-relaxed font-medium">
+                            The ElectorateRun iOS & Android mobile app is available as a free download on iTunes & Google Play. The app makes it easy for your voters to find your organization and the elections you've created.
                             While testing your election in "preview" mode, you can only login using "test" as the Voter ID & Key.
                         </p>
                     </div>
@@ -161,9 +172,9 @@ export const VoteLogin: React.FC = () => {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-100 p-4 rounded flex items-center gap-3 text-red-600 text-sm">
-                    <FiAlertCircle className="flex-shrink-0 text-lg" />
-                    <p className="font-bold">{error}</p>
+                  <div className="bg-[#FFF1F0] border border-[#FFCCC7] p-3 rounded flex items-center gap-3 text-[#ff4d4f] text-[14px]">
+                    <FiAlertTriangle className="flex-shrink-0 text-lg" />
+                    <p className="font-medium">{error}</p>
                   </div>
                 )}
 
@@ -184,14 +195,14 @@ export const VoteLogin: React.FC = () => {
       <footer className="w-full py-6 px-10 border-t border-gray-200 bg-white flex items-center justify-between text-[13px] text-gray-500">
         <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 font-bold text-gray-700">
-                <FiCheckCircle className="text-[#00AEEF]" /> electionrunner
+                <FiCheckCircle className="text-[#00AEEF]" /> ElectorateRun
             </div>
             <div className="flex items-center gap-1">
                 <FiGlobe className="text-gray-400" /> English (US) ▾
             </div>
         </div>
         <div className="flex items-center gap-4">
-            <span>Copyright © 2026 Election Runner</span>
+            <span>Copyright © 2026 ElectorateRun</span>
             <span className="text-gray-300">|</span>
             <a href="#" className="hover:underline">Terms of Service</a>
             <span className="text-gray-300">|</span>

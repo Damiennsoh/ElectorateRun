@@ -21,6 +21,8 @@ export interface Election {
   start_date: string;
   end_date: string;
   timezone: string;
+  is_results_published?: boolean;
+  results_hash?: string;
   settings?: ElectionSettings;
   created_at: string;
   updated_at: string;
@@ -36,6 +38,9 @@ export interface Voter {
   has_voted: boolean;
   voted_at?: string;
   vote_weight?: number;
+  ip_address?: string;
+  user_agent?: string;
+  ballot_receipt?: string;
 }
 
 export interface BallotQuestion {
@@ -83,7 +88,7 @@ export interface ElectionStats {
 export interface ElectionResult {
   ballotQuestion: BallotQuestion;
   results: {
-    candidate: Candidate;
+    candidate: CandidateOption;
     votes: number;
     percentage: number;
   }[];

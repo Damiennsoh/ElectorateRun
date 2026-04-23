@@ -13,7 +13,7 @@ export const MobileAppSettings: React.FC = () => {
       <div className="space-y-8 max-w-4xl">
         <div className="space-y-4">
           <p className="text-[13px] text-[#333] leading-relaxed">
-            The Election Runner iOS & Android mobile app is available as a free download on iTunes & Google Play. The app makes it easy for your voters to find your organization and the elections you've created.
+            The ElectorateRun iOS & Android mobile app is available as a free download on iTunes & Google Play. The app makes it easy for your voters to find your organization and the elections you've created.
           </p>
           <div className="flex gap-4">
             <button className="h-10">

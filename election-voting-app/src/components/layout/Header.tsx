@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { FiMail, FiUser, FiLogOut } from 'react-icons/fi';
 import { supabase } from '../../utils/supabase';
 
 export const Header: React.FC = () => {
-  const navigate = useNavigate();
   const [userName, setUserName] = useState<string>('Guest');
 
   useEffect(() => {

@@ -1,11 +1,12 @@
 import React from 'react';
-import { FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 
 interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: {
     electionTitle: string;
+    voterName: string;
     votedOn: string;
     receiptId: string;
   };
@@ -41,6 +42,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, dat
                 <div>
                    <span className="bg-gray-600 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-tighter">Election</span>
                    <div className="mt-2 font-bold text-gray-800 text-sm leading-tight px-4">{data.electionTitle}</div>
+                </div>
+
+                <div>
+                   <span className="bg-gray-600 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-tighter">Voter Name</span>
+                   <div className="mt-2 font-bold text-gray-800 text-sm leading-tight px-4">{data.voterName}</div>
                 </div>
 
                 <div>
