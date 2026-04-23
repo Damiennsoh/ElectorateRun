@@ -15,6 +15,7 @@ export const VoteLogin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isClosed, setIsClosed] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const isPreview = queryParams.get('preview') === 'true';
@@ -37,6 +38,13 @@ export const VoteLogin: React.FC = () => {
       setElection(data);
       if (data.organization) {
         setOrganization(data.organization);
+      }
+
+      // If election is not active, mark as closed and prevent login
+      if (data?.status && data.status !== 'active') {
+        setIsClosed(true);
+        setError('Voting has closed for this election.');
+        return;
       }
 
       // Check for auto-login and already voted state
@@ -180,10 +188,10 @@ export const VoteLogin: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || isClosed}
                   className="w-full bg-[#00D02D] hover:bg-[#00B026] text-white py-3.5 rounded font-bold uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  {submitting ? 'Verifying...' : 'Login to Vote'}
+                  {isClosed ? 'Voting Closed' : (submitting ? 'Verifying...' : 'Login to Vote')}
                 </button>
               </form>
             </div>

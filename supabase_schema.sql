@@ -203,6 +203,11 @@ BEGIN
     RAISE EXCEPTION 'Voter has already cast a ballot';
   END IF;
 
+    -- 1b. Verify election is active
+    IF NOT EXISTS (SELECT 1 FROM elections WHERE id = p_election_id AND status = 'active') THEN
+        RAISE EXCEPTION 'Voting is closed for this election';
+    END IF;
+
   -- 2. Create the Vote record
   INSERT INTO votes (election_id, voter_id, vote_hash)
   VALUES (p_election_id, p_voter_id, p_vote_hash)

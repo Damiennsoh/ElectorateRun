@@ -57,6 +57,12 @@ export const VoteBallot: React.FC = () => {
       ]);
 
       setElection(electionWithOrg);
+      // If election is not active, prevent voting
+      if (electionWithOrg?.status && electionWithOrg.status !== 'active') {
+        setError('Voting for this election is closed.');
+        setLoading(false);
+        return;
+      }
       if (electionWithOrg.organization) {
         setOrganization(electionWithOrg.organization);
       }

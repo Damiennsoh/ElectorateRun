@@ -120,6 +120,11 @@ BEGIN
     RAISE EXCEPTION 'Voter has already voted.';
   END IF;
 
+  -- Verify election is active
+  IF NOT EXISTS (SELECT 1 FROM elections WHERE id = p_election_id AND status = 'active') THEN
+    RAISE EXCEPTION 'Voting is closed for this election.';
+  END IF;
+
   -- 2. Insert all votes inside the transaction
   FOR v_vote IN SELECT * FROM jsonb_array_elements(p_votes)
   LOOP
