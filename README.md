@@ -76,7 +76,39 @@ ElectorateRun is a comprehensive platform for creating and managing secure, cust
 
 ## Deployment
 
-The application can be easily deployed using platforms like Vercel, Netlify, or AWS by linking your repository and configuring the environment variables for your production Supabase project.
+The application can be deployed to platforms such as Vercel, Netlify, or AWS. This repository contains the frontend app in the `election-voting-app` folder (a Vite + React project) and Supabase SQL/functions under `supabase/`.
+
+**Vercel (recommended for quick deployments)**
+
+- Project root: set to `election-voting-app` when creating the Vercel project (or set the "Root Directory" in the Vercel UI).
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+Notes:
+- This repo includes `election-voting-app/vercel.json` which configures Vercel to use `@vercel/static-build` and routes all requests to `index.html` so client-side routing works (single-page app).
+- Ensure the following environment variables are set in Vercel (Project → Settings → Environment Variables):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+
+If your production Supabase project uses server-side keys or service roles, keep those secrets out of the client bundle and use serverless functions (e.g., Supabase Edge Functions or Vercel Serverless Functions) to proxy requests.
+
+Quick manual deploy steps:
+
+1. In Vercel, click "New Project" → import your Git repository.
+2. Set the **Root Directory** to `election-voting-app`.
+3. Set environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
+4. Deploy — Vercel will run `npm install` and `npm run build`, then publish the `dist` folder.
+
+Local preview of a production build:
+
+```bash
+cd election-voting-app
+npm install
+npm run build
+npm run preview
+```
+
 
 ## Support
 
