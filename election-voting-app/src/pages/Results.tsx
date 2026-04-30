@@ -154,6 +154,19 @@ export const Results: React.FC = () => {
         is_results_published: true,
         results_hash: hashResult.hash
       } : null);
+
+      // Create app notification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await api.createNotification({
+          user_id: user.id,
+          election_id: id,
+          type: 'results_published',
+          title: 'Results Published',
+          message: `The results for "${election?.title}" have been published and are now public.`
+        });
+      }
+
       setShowPublishModal(false);
       alert('Results have been published and cryptographically hashed successfully!');
     } catch (error) {

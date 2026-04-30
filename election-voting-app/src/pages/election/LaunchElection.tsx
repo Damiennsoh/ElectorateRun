@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FiSend, FiEdit, FiCheckCircle, FiArrowRight, FiCheck, FiShoppingBag } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { api } from '../../utils/api';
+import { supabase } from '../../utils/supabase';
 import { Election, BallotQuestion } from '../../types';
 import { ElectionAssistantModal } from '../../components/election/ElectionAssistantModal';
 
@@ -86,8 +87,20 @@ export const LaunchElection: React.FC = () => {
       // 1. Update status to active
       await api.updateElection(id, { status: 'active' });
       
-      // 2. Trigger launch notifications (to creator and initial voters)
+      // 2. Trigger launch email notifications
       await api.sendVoterInvitations(id, true);
+
+      // 3. Create app notification for the admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await api.createNotification({
+          user_id: user.id,
+          election_id: id,
+          type: 'election_launched',
+          title: 'Election Launched!',
+          message: `Your election "${election?.title}" has been successfully launched and is now active.`
+        });
+      }
       
       alert('Election launched successfully!');
       navigate(`/election/${id}`);

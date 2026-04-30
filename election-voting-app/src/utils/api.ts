@@ -517,5 +517,64 @@ export const api = {
     });
     
     return allActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  },
+
+  // --- Notifications ---
+  async getNotifications() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async markNotificationRead(id: string) {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  async markAllNotificationsRead() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  async deleteNotification(id: string) {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  async createNotification(notificationData: any) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([notificationData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 };

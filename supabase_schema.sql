@@ -114,7 +114,22 @@ CREATE TABLE IF NOT EXISTS vote_choices (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS (Row Level Security) Policies
+-- 8. Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL, -- 'election_launched', 'election_completed', 'results_published', etc.
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS for Notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own notifications" ON notifications;
+CREATE POLICY "Users can manage their own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
 -- Using DROP POLICY IF EXISTS to avoid errors on re-run
 
 -- Elections

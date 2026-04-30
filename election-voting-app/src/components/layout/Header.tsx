@@ -2,9 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiMail, FiUser, FiLogOut } from 'react-icons/fi';
 import { supabase } from '../../utils/supabase';
+import { api } from '../../utils/api';
+import { NotificationDropdown } from './NotificationDropdown';
+import { AppNotification } from '../../types';
 
 export const Header: React.FC = () => {
   const [userName, setUserName] = useState<string>('Guest');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    
+    // Subscribe to notifications
+    const channel = supabase
+      .channel('public:notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        fetchUnreadCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const data = await api.getNotifications();
+      const unread = data.filter((n: AppNotification) => !n.is_read).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -58,10 +89,22 @@ export const Header: React.FC = () => {
         </nav>
       </div>
 
-      <div className="flex items-center gap-6">
-        <button className="hover:opacity-80 transition-opacity">
+      <div className="flex items-center gap-6 relative">
+        <button 
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="hover:opacity-80 transition-opacity relative p-2"
+        >
           <FiMail className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-[#00AEEF]">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
+
+        {showNotifications && (
+          <NotificationDropdown onClose={() => setShowNotifications(false)} />
+        )}
         <div className="flex items-center gap-4 border-l border-white/20 pl-6">
           <div className="flex items-center gap-2 hover:opacity-80 cursor-pointer transition-opacity">
             <FiUser className="w-5 h-5" />
