@@ -231,7 +231,7 @@ export const VoteBallot: React.FC = () => {
             <footer className="w-full py-6 px-10 border-t border-gray-200 bg-white flex items-center justify-between text-[13px] text-gray-500 mt-auto">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1 font-bold text-gray-700">
-                        <FiCheckCircle className="text-[#00AEEF]" /> electionrunner
+                        <FiCheckCircle className="text-[#00AEEF]" /> ElectorateRun
                     </div>
                     <div className="flex items-center gap-1">
                         <FiGlobe className="text-gray-400" /> English (US) ▾
@@ -390,7 +390,7 @@ export const VoteBallot: React.FC = () => {
       <footer className="w-full py-6 px-10 border-t border-gray-200 bg-white flex items-center justify-between text-[13px] text-gray-500">
         <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 font-bold text-gray-700">
-                <FiCheckCircle className="text-[#00AEEF]" /> electionrunner
+                <FiCheckCircle className="text-[#00AEEF]" /> ElectorateRun
             </div>
             <div className="flex items-center gap-1">
                 <FiGlobe className="text-gray-400" /> English (US) ▾

@@ -21,9 +21,10 @@ lerna-debug.log*
 
 # Runtime files
 .env
-.env.*.local
+.env.*
 .env.local
-/.env.local
+.env.vercel
+.vercel/
 
 # OS
 .DS_Store

@@ -178,7 +178,7 @@ export const ImportVotersInstructions: React.FC = () => {
             </p>
             <div className="mb-4">
               <strong className="text-sm text-[#333] block">Email:</strong>
-              <a href="mailto:support@electionrunner.com" className="text-sm text-[#00AEEF] hover:underline">support@electionrunner.com</a>
+              <a href="mailto:support@electoraterun.com" className="text-sm text-[#00AEEF] hover:underline">support@electoraterun.com</a>
             </div>
             <button className="w-full bg-[#00D02D] hover:bg-[#00B026] text-white px-4 py-2 rounded font-bold transition-colors text-sm">
               + New Support Ticket

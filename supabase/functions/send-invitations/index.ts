@@ -185,6 +185,7 @@ serve(async (req) => {
     const orgName = org?.name || 'Organization'
     const adminName = org?.name || 'Election Administrator'
     const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'support@electoraterun.com'
+    const appUrl = Deno.env.get('APP_URL') || 'http://localhost:3000'
     const timezone = election.timezone || 'Africa/Abidjan'
     const endDate = new Date(election.end_date).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })
 
@@ -193,11 +194,34 @@ serve(async (req) => {
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(election.user_id)
         if (!userError && userData.user?.email) {
             const subject = notifyEnded ? `Your Election Has Ended` : `Your Election Has Launched!`;
-            const dashboardUrl = `http://localhost:3000/election/${electionId}`;
+            const dashboardUrl = `${appUrl}/election/${electionId}`;
             const html = getEmailHtml(orgName, election.title, endDate, timezone, '', '', dashboardUrl, adminName, adminEmail, notifyCreator, notifyEnded);
             
             console.log(`[EMAIL] To: ${userData.user.email}, Subject: ${subject}`)
-            // await sendEmail(userData.user.email, subject, html)
+            // Send via centralized Resend function
+            try {
+                const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/resend-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: userData.user.email,
+                        subject: subject,
+                        html: html
+                    })
+                })
+                
+                const result = await response.json()
+                if (!response.ok) {
+                    console.error('Failed to send email via Resend function:', result)
+                } else {
+                    console.log('Email sent successfully via Resend function')
+                }
+            } catch (error) {
+                console.error('Error calling Resend function:', error)
+            }
         }
     }
 
@@ -213,11 +237,35 @@ serve(async (req) => {
 
         if (voters && voters.length > 0) {
             for (const voter of voters) {
-                const voteUrl = `http://localhost:3000/vote/${electionId}?vID=${voter.voter_identifier}&vKey=${voter.voter_key}`
+                const voteUrl = `${appUrl}/vote/${electionId}?vID=${voter.voter_identifier}&vKey=${voter.voter_key}`
                 const html = getEmailHtml(orgName, election.title, endDate, timezone, voter.voter_identifier, voter.voter_key, voteUrl, adminName, adminEmail, false, false)
                 
                 console.log(`[EMAIL] To: ${voter.email}, Subject: Your Invitation to Vote in the Election: ${election.title}`)
-                // await sendEmail(voter.email, `Your Invitation to Vote in the Election: ${election.title}`, html)
+            
+            // Send via centralized Resend function
+            try {
+                const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/resend-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: voter.email,
+                        subject: `Your Invitation to Vote in the Election: ${election.title}`,
+                        html: html
+                    })
+                })
+                
+                const result = await response.json()
+                if (!response.ok) {
+                    console.error('Failed to send email via Resend function:', result)
+                } else {
+                    console.log('Email sent successfully via Resend function')
+                }
+            } catch (error) {
+                console.error('Error calling Resend function:', error)
+            }
             }
 
             // Mark as sent
@@ -232,7 +280,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

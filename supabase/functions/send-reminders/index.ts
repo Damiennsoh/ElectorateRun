@@ -71,7 +71,7 @@ const getReminderHtml = (orgName: string, electionTitle: string, endDate: string
         </div>
 
         <div class="logo">
-            <div class="logo-text">electionrunner</div>
+            <div class="logo-text">ElectorateRun</div>
         </div>
     </div>
 </body>
@@ -106,7 +106,8 @@ serve(async (req) => {
 
     const orgName = org?.name || 'Organization'
     const adminName = org?.name || 'Election Administrator'
-    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'support@electionrunner.com'
+    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'support@electoraterun.com'
+    const appUrl = Deno.env.get('APP_URL') || 'http://localhost:3000'
     const timezone = election.timezone || 'Africa/Abidjan'
     const endDate = new Date(election.end_date).toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })
 
@@ -122,11 +123,35 @@ serve(async (req) => {
 
     if (voters && voters.length > 0) {
         for (const voter of voters) {
-            const voteUrl = `http://localhost:3000/vote/${electionId}?vID=${voter.voter_identifier}&vKey=${voter.voter_key}`
+            const voteUrl = `${appUrl}/vote/${electionId}?vID=${voter.voter_identifier}&vKey=${voter.voter_key}`
             const html = getReminderHtml(orgName, election.title, endDate, timezone, voter.voter_identifier, voter.voter_key, voteUrl, adminName, adminEmail)
             
             console.log(`[EMAIL] To: ${voter.email}, Subject: [REMINDER] Your Invitation to Vote in the Election: ${election.title}`)
-            // await sendEmail(voter.email, `[REMINDER] Your Invitation to Vote in the Election: ${election.title}`, html)
+            
+            // Send via centralized Resend function
+            try {
+                const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/resend-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: voter.email,
+                        subject: `[REMINDER] Your Invitation to Vote in the Election: ${election.title}`,
+                        html: html
+                    })
+                })
+                
+                const result = await response.json()
+                if (!response.ok) {
+                    console.error('Failed to send email via Resend function:', result)
+                } else {
+                    console.log('Email sent successfully via Resend function')
+                }
+            } catch (error) {
+                console.error('Error calling Resend function:', error)
+            }
         }
 
         // Mark as reminder sent
@@ -140,7 +165,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
