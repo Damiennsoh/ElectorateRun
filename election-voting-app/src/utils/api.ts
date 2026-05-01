@@ -364,23 +364,35 @@ export const api = {
   },
 
   async getBallotsByDate(electionId: string) {
-    // Fetch votes and return counts grouped by date (YYYY-MM-DD)
+    // Fetch votes
     const { data, error } = await supabase
       .from('votes')
-      .select('submitted_at, timestamp')
-      .eq('election_id', electionId);
+      .select('submitted_at')
+      .eq('election_id', electionId)
+      .order('submitted_at', { ascending: true });
 
     if (error) throw error;
+    if (!data || data.length === 0) return [];
+
+    const first = new Date(data[0].submitted_at);
+    const last = new Date(data[data.length - 1].submitted_at);
+    const diffHours = (last.getTime() - first.getTime()) / (1000 * 60 * 60);
 
     const counts: Record<string, number> = {};
-    (data || []).forEach((row: any) => {
-      const dt = row.submitted_at || row.timestamp;
-      if (!dt) return;
-      const d = new Date(dt).toISOString().slice(0,10);
-      counts[d] = (counts[d] || 0) + 1;
+    data.forEach((row: any) => {
+      const dt = new Date(row.submitted_at);
+      if (diffHours > 72) {
+        // Group by day if range > 3 days
+        const d = dt.toISOString().slice(0, 10);
+        counts[d] = (counts[d] || 0) + 1;
+      } else {
+        // Group by hour
+        dt.setMinutes(0, 0, 0);
+        const key = dt.toISOString();
+        counts[key] = (counts[key] || 0) + 1;
+      }
     });
 
-    // Convert to sorted array
     return Object.keys(counts).sort().map(k => ({ date: k, count: counts[k] }));
   },
 
@@ -470,19 +482,30 @@ export const api = {
 
   // --- Email Invitations ---
   async sendVoterInvitations(electionId: string, notifyCreator: boolean = false, notifyEnded: boolean = false) {
-    const { data, error } = await supabase.functions.invoke('send-invitations', {
-      body: { electionId, notifyCreator, notifyEnded }
-    });
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.functions.invoke('send-invitations', {
+        body: { electionId, notifyCreator, notifyEnded }
+      });
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      console.error("Email invocation error:", err);
+      // We don't want to block the UI, but we should log it
+      return { error: err.message };
+    }
   },
 
   async sendVoterReminders(electionId: string) {
-    const { data, error } = await supabase.functions.invoke('send-reminders', {
-      body: { electionId }
-    });
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.functions.invoke('send-reminders', {
+        body: { electionId }
+      });
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      console.error("Email reminder error:", err);
+      return { error: err.message };
+    }
   },
 
   async computeElectionHash(electionId: string) {
@@ -490,6 +513,65 @@ export const api = {
       body: { electionId }
     });
     if (error) throw error;
+    return data;
+  },
+
+  async launchElection(id: string, title: string) {
+    // 1. Update status to active
+    const data = await this.updateElection(id, { status: 'active' });
+    
+    // 2. Trigger launch email notifications (Edge function handles the actual email)
+    await this.sendVoterInvitations(id, true);
+
+    // 3. Create app notification for the admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await this.createNotification({
+        user_id: user.id,
+        election_id: id,
+        type: 'election_launched',
+        title: 'Election Launched!',
+        message: `Your election "${title}" has been successfully launched and is now active.`
+      });
+    }
+    return data;
+  },
+
+  async closeElection(id: string, title: string) {
+    // 1. Update status to completed
+    const data = await this.updateElection(id, { status: 'completed' });
+    
+    // 2. Trigger completion notifications
+    await this.sendVoterInvitations(id, true, true);
+
+    // 3. Create app notification for the admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await this.createNotification({
+        user_id: user.id,
+        election_id: id,
+        type: 'election_completed',
+        title: 'Election Completed!',
+        message: `Your election "${title}" has been completed. Results are now being compiled.`
+      });
+    }
+    return data;
+  },
+
+  async triggerVoterReminders(id: string, title: string) {
+    const data = await this.sendVoterReminders(id);
+    
+    // Create app notification for the admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await this.createNotification({
+        user_id: user.id,
+        election_id: id,
+        type: 'reminders_sent',
+        title: 'Reminders Sent',
+        message: `Reminders have been sent to all eligible voters for "${title}".`
+      });
+    }
     return data;
   },
 
@@ -576,5 +658,75 @@ export const api = {
 
     if (error) throw error;
     return data;
+  },
+
+  // --- Voter Registrations ---
+  async getRegistrations(electionId: string) {
+    const { data, error } = await supabase
+      .from('voter_registrations')
+      .select('*')
+      .eq('election_id', electionId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async submitRegistration(registrationData: any) {
+    const { data, error } = await supabase
+      .from('voter_registrations')
+      .insert([registrationData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async migrateRegistrations(electionId: string) {
+    // 1. Fetch all registrations for this election
+    const { data: registrations, error: fetchError } = await supabase
+      .from('voter_registrations')
+      .select('*')
+      .eq('election_id', electionId);
+    
+    if (fetchError) throw fetchError;
+    if (!registrations || registrations.length === 0) return { count: 0 };
+
+    const generateShortKey = () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous characters like 0, O, 1, I
+      const length = Math.floor(Math.random() * 2) + 3; // Random length between 3 and 4
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    };
+
+    // 2. Prepare voter records
+    const votersToInsert = registrations.map(reg => ({
+      election_id: electionId,
+      name: reg.full_name,
+      email: reg.email,
+      voter_identifier: reg.identifier,
+      voter_key: generateShortKey(),
+      has_voted: false
+    }));
+
+    // 3. Bulk insert into voters table
+    const { data, error: insertError } = await supabase
+      .from('voters')
+      .insert(votersToInsert)
+      .select();
+
+    if (insertError) throw insertError;
+
+    // 4. Delete processed registrations
+    await supabase
+      .from('voter_registrations')
+      .delete()
+      .eq('election_id', electionId);
+
+    return { count: data.length };
   }
 };

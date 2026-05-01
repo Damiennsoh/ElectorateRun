@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ElectionSidebarLayout } from '../components/layout/ElectionSidebarLayout';
 import { DonutChart } from '../components/charts/DonutChart';
-import { FiDownload, FiBarChart2, FiRotateCw, FiUsers, FiFileText, FiChevronDown } from 'react-icons/fi';
+import { FiDownload, FiBarChart2, FiRotateCw, FiUsers, FiFileText, FiChevronDown, FiInfo } from 'react-icons/fi';
 import { api } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { Election } from '../types';
@@ -274,67 +274,90 @@ export const Results: React.FC = () => {
             </div>
         )}
 
-        {totalVotesCast === 0 ? (
-          <div className="space-y-6">
-            <div className="bg-[#E6F9FB] border border-[#00AEEF]/20 p-4 rounded text-[#00AEEF] text-[15px]">
-              No results yet. Results will show here as soon as voters start voting.
-            </div>
-            <div className="text-[14px] font-bold text-[#333]">
-              Last Updated: <span className="font-normal text-gray-600">{lastUpdated}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            <div className="text-[14px] font-bold text-[#333] mb-4">
-              Last Updated: <span className="font-normal text-gray-600">{lastUpdated}</span>
-            </div>
+        {(() => {
+          const settings = (election?.settings as any) || {};
+          const isResultsHidden = settings.hide_results && election?.status !== 'completed';
 
-            {results.map((qResult) => (
-              <div key={qResult.id} className="bg-white border border-gray-200 rounded overflow-hidden shadow-sm">
-                <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
-                  <h3 className="text-[15px] font-bold text-gray-800">{qResult.title}</h3>
+          if (isResultsHidden) {
+            return (
+              <div className="space-y-6">
+                <div className="bg-[#E6F9FB] border border-[#00AEEF]/20 p-6 rounded text-[#00AEEF] text-[15px] flex items-center gap-4">
+                  <FiInfo className="text-xl flex-shrink-0" />
+                  <span>The election administrator has chosen to hide the results of this election until the election has ended.</span>
                 </div>
-                <div className="p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    <div>
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-100">
-                            <th className="text-left pb-4 font-bold text-gray-800 text-[13px]">Option</th>
-                            <th className="text-right pb-4 font-bold text-gray-800 text-[13px]">Votes</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {qResult.data.map((item) => (
-                            <tr key={item.name} className="group">
-                              <td className="py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
-                                  <span className="text-[14px] text-gray-700">{item.name}</span>
-                                </div>
-                              </td>
-                              <td className="py-4 text-right">
-                                <div className="flex items-center justify-end gap-4">
-                                  <span className="text-[14px] text-gray-500">{item.percentage}%</span>
-                                  <span className="min-w-[32px] text-center bg-gray-800 text-white px-2 py-0.5 rounded text-[12px] font-bold">
-                                    {item.value}
-                                  </span>
-                                </div>
-                              </td>
+                <div className="text-[14px] font-bold text-[#333]">
+                  Last Updated: <span className="font-normal text-gray-600">{lastUpdated}</span>
+                </div>
+              </div>
+            );
+          }
+
+          if (totalVotesCast === 0) {
+            return (
+              <div className="space-y-6">
+                <div className="bg-[#E6F9FB] border border-[#00AEEF]/20 p-4 rounded text-[#00AEEF] text-[15px]">
+                  No results yet. Results will show here as soon as voters start voting.
+                </div>
+                <div className="text-[14px] font-bold text-[#333]">
+                  Last Updated: <span className="font-normal text-gray-600">{lastUpdated}</span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-8">
+              <div className="text-[14px] font-bold text-[#333] mb-4">
+                Last Updated: <span className="font-normal text-gray-600">{lastUpdated}</span>
+              </div>
+
+              {results.map((qResult) => (
+                <div key={qResult.id} className="bg-white border border-gray-200 rounded overflow-hidden shadow-sm">
+                  <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
+                    <h3 className="text-[15px] font-bold text-gray-800">{qResult.title}</h3>
+                  </div>
+                  <div className="p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                      <div>
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gray-100">
+                              <th className="text-left pb-4 font-bold text-gray-800 text-[13px]">Option</th>
+                              <th className="text-right pb-4 font-bold text-gray-800 text-[13px]">Votes</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="flex justify-center">
-                      <DonutChart data={qResult.data} size={250} />
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {qResult.data.map((item) => (
+                              <tr key={item.name} className="group">
+                                <td className="py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
+                                    <span className="text-[14px] text-gray-700">{item.name}</span>
+                                  </div>
+                                </td>
+                                <td className="py-4 text-right">
+                                  <div className="flex items-center justify-end gap-4">
+                                    <span className="text-[14px] text-gray-500">{item.percentage}%</span>
+                                    <span className="min-w-[32px] text-center bg-gray-800 text-white px-2 py-0.5 rounded text-[12px] font-bold">
+                                      {item.value}
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="flex justify-center">
+                        <DonutChart data={qResult.data} size={250} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
       </div>
       {/* Publish Modal */}
       {showPublishModal && (

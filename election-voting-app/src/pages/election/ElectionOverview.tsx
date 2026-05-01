@@ -102,18 +102,12 @@ export const ElectionOverview: React.FC = () => {
       // Fetch ballots by date for the chart
       try {
         const byDate = await api.getBallotsByDate(electionId);
-        // If RPC returns nothing, fall back to aggregating by voters.voted_at timestamps
-        if (!byDate || byDate.length === 0) {
-          const counts: Record<string, number> = {};
-          (votersData || []).forEach((v: any) => {
-            if (!v.voted_at) return;
-            const d = new Date(v.voted_at).toISOString().slice(0,10);
-            counts[d] = (counts[d] || 0) + 1;
-          });
-          const arr = Object.keys(counts).sort().map(k => ({ date: k, count: counts[k] }));
-          setSubmissionsByDate(arr);
+        // Ensure we have data points for the entire range if possible
+        if (byDate && byDate.length > 0) {
+          setSubmissionsByDate(byDate);
         } else {
-          setSubmissionsByDate(byDate || []);
+          // Fallback if no votes yet
+          setSubmissionsByDate([]);
         }
       } catch (e) {
         console.warn('Failed to load ballots by date', e);
@@ -133,10 +127,12 @@ export const ElectionOverview: React.FC = () => {
   if (loading) return <ElectionSidebarLayout><div className="p-20 text-center text-gray-500">Loading...</div></ElectionSidebarLayout>;
   if (!election) return <ElectionSidebarLayout><div className="p-20 text-center text-red-500">Election not found.</div></ElectionSidebarLayout>;
 
-  const baseUrl = (import.meta.env.VITE_PUBLIC_URL as string) || 'https://vote.electorateun.com';
-  const baseOrg = (import.meta.env.VITE_PUBLIC_URL_ORG as string) || 'https://electorateun.com';
-  const electionUrl = `${baseUrl}/election/${id}`;
-  const orgUrl = `${orgSubdomain ? `https://${orgSubdomain}.` : ''}${baseOrg.replace(/^https?:\/\//, '')}`;
+  const baseUrl = window.location.origin;
+  const electionUrl = `${baseUrl}/vote/${id}`;
+  const shortUrl = `${baseUrl}/v/${id?.substring(0, 8)}`;
+  const orgUrl = orgSubdomain 
+    ? `https://${orgSubdomain}.electoraterun.com` 
+    : `${baseUrl}/settings/organization`;
 
   const participationRate = stats.voters > 0 ? Math.round((stats.votesCast / stats.voters) * 100) : 0;
 
@@ -161,9 +157,9 @@ export const ElectionOverview: React.FC = () => {
         )}
 
         {election.status === 'completed' && (
-            <div className="bg-[#00D02D] p-4 rounded text-center text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm animate-fade-in">
-                This election ended on {new Date(election.end_date!).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })}. 
-                <button onClick={() => window.location.href=`/election/${id}/results`} className="underline ml-2 hover:opacity-80 transition-opacity">View Results »</button>
+            <div className="bg-[#00D02D] p-4 rounded text-center text-white font-bold text-[14px] sm:text-[15px] flex flex-col sm:flex-row items-center justify-center gap-2 shadow-sm animate-fade-in">
+                <span>This election ended on {new Date(election.end_date!).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })}.</span>
+                <button onClick={() => window.location.href=`/election/${id}/results`} className="underline hover:opacity-80 transition-opacity">View Results »</button>
             </div>
         )}
 
@@ -174,36 +170,36 @@ export const ElectionOverview: React.FC = () => {
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-800 text-[18px]">Ballots Submitted <span className="text-gray-400 font-normal">By Date</span></h3>
               </div>
-              <div className="p-6">
+              <div className="py-6 px-0">
                 <div className="h-[220px]">
                   <BallotsByDateChart data={submissionsByDate} />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-6 mt-6">
-                <div className="bg-[#00D02D] rounded p-6 text-white flex-1 text-center shadow-sm">
-                  <FiCheckCircle className="opacity-10 w-12 h-12 mx-auto" />
-                  <div className="text-4xl font-bold mt-2">{participationRate}%</div>
-                  <div className="text-xs font-bold uppercase tracking-widest mt-2">Participation ({stats.votesCast} Voters)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                <div className="bg-[#00D02D] rounded p-6 text-white text-center shadow-sm relative overflow-hidden">
+                  <FiCheckCircle className="absolute left-[-10px] top-[-10px] opacity-10 w-24 h-24 rotate-12" />
+                  <div className="text-4xl font-bold mt-2 relative z-10">{participationRate}%</div>
+                  <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Participation ({stats.votesCast} Voters)</div>
                 </div>
 
-              <div className="bg-[#FF6A13] rounded p-6 text-white flex-1 text-center shadow-sm">
-                <FiUsers className="opacity-10 w-12 h-12 mx-auto" />
-                <div className="text-4xl font-bold mt-2">{stats.voters}</div>
-                <div className="text-xs font-bold uppercase tracking-widest mt-2">Voters</div>
+              <div className="bg-[#FF6A13] rounded p-6 text-white text-center shadow-sm relative overflow-hidden">
+                <FiUsers className="absolute left-[-10px] top-[-10px] opacity-10 w-24 h-24 rotate-12" />
+                <div className="text-4xl font-bold mt-2 relative z-10">{stats.voters}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Voters</div>
               </div>
 
-              <div className="bg-[#FF0080] rounded p-6 text-white flex-1 text-center shadow-sm">
-                <FiHelpCircle className="opacity-10 w-12 h-12 mx-auto" />
-                <div className="text-4xl font-bold mt-2">{stats.questions}</div>
-                <div className="text-xs font-bold uppercase tracking-widest mt-2">Ballot Questions</div>
+              <div className="bg-[#FF0080] rounded p-6 text-white text-center shadow-sm relative overflow-hidden">
+                <FiHelpCircle className="absolute left-[-10px] top-[-10px] opacity-10 w-24 h-24 rotate-12" />
+                <div className="text-4xl font-bold mt-2 relative z-10">{stats.questions}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Ballot Questions</div>
               </div>
 
-              <div className="bg-[#603FEF] rounded p-6 text-white flex-1 text-center shadow-sm">
-                <FiList className="opacity-10 w-12 h-12 mx-auto" />
-                <div className="text-4xl font-bold mt-2">{stats.options}</div>
-                <div className="text-xs font-bold uppercase tracking-widest mt-2">Options</div>
+              <div className="bg-[#603FEF] rounded p-6 text-white text-center shadow-sm relative overflow-hidden">
+                <FiList className="absolute left-[-10px] top-[-10px] opacity-10 w-24 h-24 rotate-12" />
+                <div className="text-4xl font-bold mt-2 relative z-10">{stats.options}</div>
+                <div className="text-xs font-bold uppercase tracking-widest mt-2 relative z-10">Options</div>
               </div>
             </div>
           </>
@@ -253,8 +249,8 @@ export const ElectionOverview: React.FC = () => {
                       <label className="text-[13px] font-bold text-gray-700">Short URL</label>
                     </div>
                     <div className="flex">
-                      <input readOnly placeholder=" " className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
-                      <button className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
+                      <input readOnly value={shortUrl} className="flex-1 px-3 py-2 bg-[#F9FBFC] border border-gray-200 rounded-l outline-none text-[15px] text-gray-600" />
+                      <button onClick={() => copyToClipboard(shortUrl)} className="px-5 py-2 bg-white border border-gray-200 border-l-0 rounded-r flex items-center gap-2 text-[14px] font-bold text-gray-700 hover:bg-gray-50">
                         <FiCopy /> Copy
                       </button>
                     </div>

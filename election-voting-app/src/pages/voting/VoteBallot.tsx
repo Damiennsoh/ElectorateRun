@@ -40,13 +40,15 @@ export const VoteBallot: React.FC = () => {
     try {
       const currentVoter = JSON.parse(sessionData);
       
-      // Check if already voted
-      const freshVoter = await api.getVoterById(currentVoter.id);
-      if (freshVoter.has_voted) {
-          setVoter(freshVoter);
-          setSubmitted(true);
-          setLoading(false);
-          return;
+      // Check if already voted (bypass for preview)
+      if (!isPreview) {
+          const freshVoter = await api.getVoterById(currentVoter.id);
+          if (freshVoter.has_voted) {
+              setVoter(freshVoter);
+              setSubmitted(true);
+              setLoading(false);
+              return;
+          }
       }
 
       setVoter(currentVoter);
@@ -57,8 +59,8 @@ export const VoteBallot: React.FC = () => {
       ]);
 
       setElection(electionWithOrg);
-      // If election is not active, prevent voting
-      if (electionWithOrg?.status && electionWithOrg.status !== 'active') {
+      // If election is not active, prevent voting (unless in preview mode)
+      if (!isPreview && electionWithOrg?.status && electionWithOrg.status !== 'active') {
         setError('Voting for this election is closed.');
         setLoading(false);
         return;
@@ -67,9 +69,9 @@ export const VoteBallot: React.FC = () => {
         setOrganization(electionWithOrg.organization);
       }
       setQuestions(questionsData as unknown as BallotQuestion[]);
-    } catch (error) {
-      console.error('Error loading ballot:', error);
-      setError('Failed to load ballot data.');
+    } catch (error: any) {
+      console.error('Error loading ballot data:', error);
+      setError(`Failed to load ballot data: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }

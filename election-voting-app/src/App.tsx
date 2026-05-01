@@ -43,6 +43,8 @@ import { ValidateElection } from './pages/election/ValidateElection';
 // Voting Interface
 import { VoteLogin } from './pages/voting/VoteLogin';
 import { VoteBallot } from './pages/voting/VoteBallot';
+import { VoterRegistration } from './pages/voting/VoterRegistration';
+import { VoterRegistrationList } from './pages/voting/VoterRegistrationList';
 
 // Placeholders for remaining nested routes
 const DatesSettings = () => <div className="p-8 text-xl font-bold">Dates Settings</div>;
@@ -109,6 +111,8 @@ const App: React.FC = () => {
         {/* Public Voting Routes */}
         <Route path="/vote/:id" element={<VoteLogin />} />
         <Route path="/vote/:id/ballot" element={<VoteBallot />} />
+        <Route path="/register/:id" element={<VoterRegistration />} />
+        <Route path="/register/:id/list" element={<VoterRegistrationList />} />
         <Route path="/election/:id/results/public" element={<PublicResults />} />
         <Route path="/election/:id/validate" element={<ValidateElection />} />
         

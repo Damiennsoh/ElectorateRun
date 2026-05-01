@@ -74,61 +74,73 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
   };
 
   return (
-    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100] notification-dropdown-container">
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-        <h3 className="font-semibold text-gray-900">Notifications</h3>
+    <div className="absolute right-0 mt-3 w-[360px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-[100] notification-dropdown-container animate-fade-in">
+      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div>
+          <h3 className="font-bold text-gray-900 text-base">Notifications</h3>
+          <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Stay updated on your elections</p>
+        </div>
         <button 
           onClick={handleMarkAllRead}
-          className="text-xs text-[#00AEEF] hover:underline font-medium"
+          className="text-[12px] text-[#00AEEF] hover:text-[#009CD6] font-bold transition-colors"
         >
           Mark all as read
         </button>
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
         {loading ? (
-          <div className="p-8 text-center text-gray-500 text-sm">Loading...</div>
+          <div className="p-12 text-center text-gray-400 text-sm italic">Loading your updates...</div>
         ) : notifications.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FiMail className="w-6 h-6 text-gray-300" />
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+              <FiMail className="w-7 h-7 text-gray-300" />
             </div>
-            <p className="text-gray-500 text-sm">No notifications yet</p>
+            <p className="text-gray-500 font-medium">All caught up!</p>
+            <p className="text-gray-400 text-xs mt-1">No new notifications at the moment.</p>
           </div>
         ) : (
-          notifications.map((n) => (
-            <div 
-              key={n.id}
-              onClick={() => !n.is_read && handleMarkAsRead(n.id)}
-              className={`p-4 border-b border-gray-50 flex gap-4 hover:bg-gray-50 transition-colors cursor-pointer relative ${!n.is_read ? 'bg-[#00AEEF]/5' : ''}`}
-            >
-              {getIcon(n.type)}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm font-medium ${!n.is_read ? 'text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
-                  <button 
-                    onClick={(e) => handleDelete(n.id, e)}
-                    className="text-gray-300 hover:text-red-500 transition-colors"
-                  >
-                    <FiTrash2 className="w-3.5 h-3.5" />
-                  </button>
+          <div className="divide-y divide-gray-50">
+            {notifications.map((n) => (
+              <div 
+                key={n.id}
+                onClick={() => !n.is_read && handleMarkAsRead(n.id)}
+                className={`p-5 flex gap-4 hover:bg-gray-50/80 transition-all cursor-pointer relative group ${!n.is_read ? 'bg-[#00AEEF]/[0.03]' : ''}`}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  {getIcon(n.type)}
                 </div>
-                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{n.message}</p>
-                <p className="text-[10px] text-gray-400 mt-2">
-                  {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-[14px] leading-tight ${!n.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                      {n.title}
+                    </p>
+                    <button 
+                      onClick={(e) => handleDelete(n.id, e)}
+                      className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 opacity-0 group-hover:opacity-100"
+                    >
+                      <FiTrash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed line-clamp-3">
+                    {n.message}
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className={`w-1.5 h-1.5 rounded-full ${!n.is_read ? 'bg-[#00AEEF]' : 'bg-transparent'}`}></div>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
               </div>
-              {!n.is_read && (
-                <div className="absolute top-4 right-2 w-2 h-2 bg-[#00AEEF] rounded-full"></div>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {notifications.length > 0 && (
-        <div className="p-3 bg-gray-50 text-center border-t border-gray-100">
-          <button className="text-xs text-gray-600 hover:text-gray-900 font-medium">
+        <div className="p-4 bg-gray-50/50 text-center border-t border-gray-100">
+          <button className="text-[13px] text-gray-600 hover:text-[#00AEEF] font-bold transition-colors uppercase tracking-widest">
             View all activity
           </button>
         </div>

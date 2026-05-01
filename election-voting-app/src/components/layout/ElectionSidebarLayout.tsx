@@ -113,9 +113,9 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-56 bg-[#2C3E50] min-h-[calc(100vh-100px)] flex-shrink-0">
+      <div className="flex flex-col lg:flex-row">
+        {/* Sidebar - Desktop */}
+        <aside className="hidden lg:block w-56 bg-[#2C3E50] min-h-[calc(100vh-100px)] flex-shrink-0">
           <nav className="py-4">
             {menuItems.map((item) => (
               <NavLink
@@ -156,8 +156,27 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
           </div>
         </aside>
 
+        {/* Mobile Navigation - Simple horizontal scroll */}
+        <div className="lg:hidden bg-[#2C3E50] overflow-x-auto flex whitespace-nowrap scrollbar-hide border-t border-white/5">
+            {menuItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-6 py-4 transition-colors ${
+                    isActive
+                      ? 'bg-[#1A2533] text-white border-b-2 border-[#00AEEF]'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`
+                }
+              >
+                <span className="text-sm font-bold uppercase tracking-tight">{item.label}</span>
+              </NavLink>
+            ))}
+        </div>
+
         {/* Main Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

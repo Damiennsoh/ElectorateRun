@@ -4,6 +4,10 @@ export interface ElectionSettings {
   weighted_voting?: boolean;
   ballot_receipt?: boolean;
   submit_ballot_confirmation?: boolean;
+  registration_start?: string;
+  registration_end?: string;
+  registration_list_public?: boolean;
+  registration_enabled?: boolean;
   email?: {
     enabled: boolean;
     auto_login: boolean;

@@ -40,8 +40,8 @@ export const VoteLogin: React.FC = () => {
         setOrganization(data.organization);
       }
 
-      // If election is not active, mark as closed and prevent login
-      if (data?.status && data.status !== 'active') {
+      // If election is not active, mark as closed and prevent login (unless in preview mode)
+      if (!isPreview && data?.status && data.status !== 'active') {
         setIsClosed(true);
         setError('Voting has closed for this election.');
         return;

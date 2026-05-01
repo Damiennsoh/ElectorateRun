@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiFlag } from 'react-icons/fi';
 import { api } from '../../../utils/api';
-import { supabase } from '../../../utils/supabase';
 
 export const CloseElection: React.FC = () => {
   const { id } = useParams();
@@ -17,23 +16,8 @@ export const CloseElection: React.FC = () => {
 
     setClosing(true);
     try {
-      await api.updateElection(id, { status: 'completed' });
-      // Trigger "Election Has Ended" email to creator
-      await api.sendVoterInvitations(id, false, true);
-
-      // Create app notification
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const election = await api.getElectionById(id);
-        await api.createNotification({
-          user_id: user.id,
-          election_id: id,
-          type: 'election_completed',
-          title: 'Election Completed',
-          message: `Your election "${election?.title}" has ended.`
-        });
-      }
-
+      const election = await api.getElectionById(id);
+      await api.closeElection(id, election?.title || 'Election');
       navigate(`/election/${id}/overview`);
     } catch (err) {
       console.error("Error closing election:", err);
