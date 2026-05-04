@@ -126,16 +126,47 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 9. Voter Registrations (Self-Registration Phase)
+CREATE TABLE IF NOT EXISTS voter_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    identifier VARCHAR(255) NOT NULL, -- Student/Staff ID
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(election_id, email),
+    UNIQUE(election_id, identifier)
+);
+
+-- RLS for Voter Registrations
+ALTER TABLE voter_registrations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can submit a registration" ON voter_registrations;
+CREATE POLICY "Anyone can submit a registration" ON voter_registrations FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can manage registrations for their elections" ON voter_registrations;
+CREATE POLICY "Users can manage registrations for their elections" ON voter_registrations FOR ALL USING (
+    EXISTS (SELECT 1 FROM elections WHERE elections.id = voter_registrations.election_id AND elections.user_id = auth.uid())
+);
+
 -- RLS for Notifications
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage their own notifications" ON notifications;
 CREATE POLICY "Users can manage their own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
 -- Using DROP POLICY IF EXISTS to avoid errors on re-run
 
+-- Organizations
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own organization" ON organizations;
+CREATE POLICY "Users can manage their own organization" ON organizations FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Anyone can view organizations" ON organizations;
+CREATE POLICY "Anyone can view organizations" ON organizations FOR SELECT USING (true);
+
 -- Elections
 ALTER TABLE elections ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage their own elections" ON elections;
 CREATE POLICY "Users can manage their own elections" ON elections FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Anyone can view elections" ON elections;
+CREATE POLICY "Anyone can view elections" ON elections FOR SELECT USING (true);
 
 -- Questions
 ALTER TABLE ballot_questions ENABLE ROW LEVEL SECURITY;
@@ -143,6 +174,8 @@ DROP POLICY IF EXISTS "Users can manage their election questions" ON ballot_ques
 CREATE POLICY "Users can manage their election questions" ON ballot_questions FOR ALL USING (
     EXISTS (SELECT 1 FROM elections WHERE elections.id = ballot_questions.election_id AND elections.user_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Anyone can view election questions" ON ballot_questions;
+CREATE POLICY "Anyone can view election questions" ON ballot_questions FOR SELECT USING (true);
 
 -- Options
 ALTER TABLE candidate_options ENABLE ROW LEVEL SECURITY;
@@ -155,6 +188,8 @@ CREATE POLICY "Users can manage their candidate options" ON candidate_options FO
         AND elections.user_id = auth.uid()
     )
 );
+DROP POLICY IF EXISTS "Anyone can view candidate options" ON candidate_options;
+CREATE POLICY "Anyone can view candidate options" ON candidate_options FOR SELECT USING (true);
 
 -- Voters
 ALTER TABLE voters ENABLE ROW LEVEL SECURITY;
@@ -181,11 +216,6 @@ DROP POLICY IF EXISTS "Users can see vote choices for their elections" ON vote_c
 CREATE POLICY "Users can see vote choices for their elections" ON vote_choices FOR SELECT USING (
     EXISTS (SELECT 1 FROM votes JOIN elections ON elections.id = votes.election_id WHERE votes.id = vote_choices.vote_id AND elections.user_id = auth.uid())
 );
-
--- Organizations
-ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage their own organization" ON organizations;
-CREATE POLICY "Users can manage their own organization" ON organizations FOR ALL USING (auth.uid() = user_id);
 
 -- Functions & Triggers
 CREATE OR REPLACE FUNCTION update_modified_column()
