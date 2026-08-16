@@ -68,14 +68,9 @@ export const VoteBallot: React.FC = () => {
         setOrganization(electionWithOrg.organization);
       }
       setQuestions(questionsData as unknown as BallotQuestion[]);
-<<<<<<< HEAD
-    } catch (error) {
-      console.error('Error loading ballot:', error);
-=======
     } catch (error: any) {
       console.error('Error loading ballot data:', error);
       setError(`Failed to load ballot data: ${error.message || 'Unknown error'}`);
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
     } finally {
       setLoading(false);
     }

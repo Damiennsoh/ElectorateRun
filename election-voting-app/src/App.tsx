@@ -26,10 +26,7 @@ import { LaunchElection } from './pages/election/LaunchElection';
 import { AddOns } from './pages/election/AddOns';
 import { Preview } from './pages/election/Preview';
 import { Voters } from './pages/election/Voters';
-<<<<<<< HEAD
 import { ElectionSidebarLayout } from './components/layout/ElectionSidebarLayout';
-=======
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 import { ElectionSettingsLayout } from './pages/election/settings/ElectionSettingsLayout';
 import { GeneralSettings as ElectionGeneralSettings } from './pages/election/settings/GeneralSettings';
 import { DatesSettings as ElectionDatesSettings } from './pages/election/settings/DatesSettings';
@@ -50,20 +47,8 @@ import { VoteBallot } from './pages/voting/VoteBallot';
 import { VoterRegistration } from './pages/voting/VoterRegistration';
 import { VoterRegistrationList } from './pages/voting/VoterRegistrationList';
 
-<<<<<<< HEAD
-// Placeholder components for other routes
+// Placeholder component for the fraud analysis route.
 const FraudAnalysis = () => <ElectionSidebarLayout><div className="p-8 text-2xl font-bold">Fraud Analysis</div></ElectionSidebarLayout>;
-=======
-// Placeholders for remaining nested routes
-const DatesSettings = () => <div className="p-8 text-xl font-bold">Dates Settings</div>;
-const VotersSettings = () => <div className="p-8 text-xl font-bold">Voters Settings</div>;
-const MessagesSettings = () => <div className="p-8 text-xl font-bold">Messages Settings</div>;
-const ResultsSettings = () => <div className="p-8 text-xl font-bold">Results Settings</div>;
-const DuplicateElection = () => <div className="p-8 text-xl font-bold">Duplicate Election</div>;
-const ArchiveElection = () => <div className="p-8 text-xl font-bold">Archive Election</div>;
-const DeleteElection = () => <div className="p-8 text-xl font-bold">Delete Election</div>;
-
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);

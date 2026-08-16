@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiUser } from 'react-icons/fi';
-<<<<<<< HEAD
-=======
 
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 import { supabase } from '../../../utils/supabase';
 
 export const ProfileSettings: React.FC = () => {

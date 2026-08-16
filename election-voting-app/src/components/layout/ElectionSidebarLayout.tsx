@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { 
   FiHome, FiSettings, FiList, FiUsers, 
-<<<<<<< HEAD
-  FiEye, FiPlusSquare, FiSend, FiShield
-=======
   FiEye, FiPlusSquare, FiSend, FiShield, FiBarChart
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 } from 'react-icons/fi';
 import { Header } from './Header';
 import { api } from '../../utils/api';
@@ -17,12 +13,8 @@ interface ElectionSidebarLayoutProps {
 
 export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ children }) => {
   const { id } = useParams();
-<<<<<<< HEAD
   const [currentElection, setCurrentElection] = useState<any>({ title: 'Loading...', status: 'draft' });
-=======
-  const [currentElection, setCurrentElection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 
   const [voterCount, setVoterCount] = useState(0);
   const [orgTier, setOrgTier] = useState('FREE');

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
-<<<<<<< HEAD
-import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList } from 'react-icons/fi';
-=======
 import { FiHome, FiCopy, FiGlobe, FiUsers, FiHelpCircle, FiList, FiCheckCircle } from 'react-icons/fi';
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 import { api } from '../../utils/api';
 import { Election } from '../../types';
 import BallotsByDateChart from '../../components/charts/BallotsByDateChart';

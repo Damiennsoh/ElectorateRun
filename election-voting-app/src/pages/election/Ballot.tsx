@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-<<<<<<< HEAD
 import { FiList, FiPlus, FiUploadCloud, FiMoreVertical, FiTrash2, FiDownload, FiPaperclip, FiUsers, FiEdit, FiCheckCircle, FiEdit3, FiUser, FiLoader } from 'react-icons/fi';
-=======
-import { FiList, FiPlus, FiUploadCloud, FiMoreVertical, FiTrash2, FiDownload, FiPaperclip, FiUsers, FiEdit, FiCheckCircle, FiEdit3, FiLoader } from 'react-icons/fi';
->>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { EditBallotModal } from '../../components/election/EditBallotModal';
 import { BulkAddModal } from '../../components/election/BulkAddModal';
