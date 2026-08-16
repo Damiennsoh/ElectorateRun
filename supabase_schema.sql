@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS elections (
     timezone VARCHAR(50) DEFAULT 'UTC',
     status election_status DEFAULT 'building',
     settings JSONB DEFAULT '{}'::jsonb, 
+    is_results_published BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -87,6 +88,9 @@ CREATE TABLE IF NOT EXISTS voters (
     voted_at TIMESTAMPTZ,
     invitation_sent_at TIMESTAMPTZ,
     reminder_sent_at TIMESTAMPTZ,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    ballot_receipt VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(election_id, voter_identifier)
 );
@@ -110,13 +114,59 @@ CREATE TABLE IF NOT EXISTS vote_choices (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS (Row Level Security) Policies
+-- 8. Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL, -- 'election_launched', 'election_completed', 'results_published', etc.
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Voter Registrations (Self-Registration Phase)
+CREATE TABLE IF NOT EXISTS voter_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    identifier VARCHAR(255) NOT NULL, -- Student/Staff ID
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(election_id, email),
+    UNIQUE(election_id, identifier)
+);
+
+-- RLS for Voter Registrations
+ALTER TABLE voter_registrations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can submit a registration" ON voter_registrations;
+CREATE POLICY "Anyone can submit a registration" ON voter_registrations FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can manage registrations for their elections" ON voter_registrations;
+CREATE POLICY "Users can manage registrations for their elections" ON voter_registrations FOR ALL USING (
+    EXISTS (SELECT 1 FROM elections WHERE elections.id = voter_registrations.election_id AND elections.user_id = auth.uid())
+);
+
+-- RLS for Notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own notifications" ON notifications;
+CREATE POLICY "Users can manage their own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
 -- Using DROP POLICY IF EXISTS to avoid errors on re-run
+
+-- Organizations
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own organization" ON organizations;
+CREATE POLICY "Users can manage their own organization" ON organizations FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Anyone can view organizations" ON organizations;
+CREATE POLICY "Anyone can view organizations" ON organizations FOR SELECT USING (true);
 
 -- Elections
 ALTER TABLE elections ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage their own elections" ON elections;
 CREATE POLICY "Users can manage their own elections" ON elections FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Anyone can view elections" ON elections;
+CREATE POLICY "Anyone can view elections" ON elections FOR SELECT USING (true);
 
 -- Questions
 ALTER TABLE ballot_questions ENABLE ROW LEVEL SECURITY;
@@ -124,6 +174,8 @@ DROP POLICY IF EXISTS "Users can manage their election questions" ON ballot_ques
 CREATE POLICY "Users can manage their election questions" ON ballot_questions FOR ALL USING (
     EXISTS (SELECT 1 FROM elections WHERE elections.id = ballot_questions.election_id AND elections.user_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Anyone can view election questions" ON ballot_questions;
+CREATE POLICY "Anyone can view election questions" ON ballot_questions FOR SELECT USING (true);
 
 -- Options
 ALTER TABLE candidate_options ENABLE ROW LEVEL SECURITY;
@@ -136,6 +188,8 @@ CREATE POLICY "Users can manage their candidate options" ON candidate_options FO
         AND elections.user_id = auth.uid()
     )
 );
+DROP POLICY IF EXISTS "Anyone can view candidate options" ON candidate_options;
+CREATE POLICY "Anyone can view candidate options" ON candidate_options FOR SELECT USING (true);
 
 -- Voters
 ALTER TABLE voters ENABLE ROW LEVEL SECURITY;
@@ -162,11 +216,6 @@ DROP POLICY IF EXISTS "Users can see vote choices for their elections" ON vote_c
 CREATE POLICY "Users can see vote choices for their elections" ON vote_choices FOR SELECT USING (
     EXISTS (SELECT 1 FROM votes JOIN elections ON elections.id = votes.election_id WHERE votes.id = vote_choices.vote_id AND elections.user_id = auth.uid())
 );
-
--- Organizations
-ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage their own organization" ON organizations;
-CREATE POLICY "Users can manage their own organization" ON organizations FOR ALL USING (auth.uid() = user_id);
 
 -- Functions & Triggers
 CREATE OR REPLACE FUNCTION update_modified_column()
@@ -198,6 +247,11 @@ BEGIN
   IF EXISTS (SELECT 1 FROM voters WHERE id = p_voter_id AND has_voted = true) THEN
     RAISE EXCEPTION 'Voter has already cast a ballot';
   END IF;
+
+    -- 1b. Verify election is active
+    IF NOT EXISTS (SELECT 1 FROM elections WHERE id = p_election_id AND status = 'active') THEN
+        RAISE EXCEPTION 'Voting is closed for this election';
+    END IF;
 
   -- 2. Create the Vote record
   INSERT INTO votes (election_id, voter_id, vote_hash)
@@ -232,3 +286,44 @@ CREATE POLICY "Allow authenticated uploads" ON storage.objects FOR INSERT TO aut
 
 DROP POLICY IF EXISTS "Allow public read access" ON storage.objects;
 CREATE POLICY "Allow public read access" ON storage.objects FOR SELECT TO public USING (bucket_id = 'election-assets');
+
+-- 8. Views for Real-time Results & Participation
+-- These views are used by the Results page to show live updates
+
+-- election_results_view: Aggregates votes per candidate option
+CREATE OR REPLACE VIEW election_results_view AS
+SELECT 
+    e.id AS election_id,
+    bq.id AS question_id,
+    bq.title AS question_title,
+    co.id AS option_id,
+    co.title AS option_title,
+    co.photo_url,
+    COUNT(vc.id) AS vote_count,
+    SUM(v.vote_weight) AS weighted_vote_count
+FROM elections e
+JOIN ballot_questions bq ON bq.election_id = e.id
+JOIN candidate_options co ON co.ballot_question_id = bq.id
+LEFT JOIN vote_choices vc ON vc.candidate_option_id = co.id
+LEFT JOIN votes vt ON vt.id = vc.vote_id
+LEFT JOIN voters v ON v.id = vt.voter_id
+GROUP BY e.id, bq.id, bq.title, co.id, co.title, co.photo_url;
+
+-- election_participation_view: Calculates total vs voted counts
+CREATE OR REPLACE VIEW election_participation_view AS
+SELECT 
+    election_id,
+    COUNT(id) AS total_voters,
+    COUNT(id) FILTER (WHERE has_voted = true) AS voted_count,
+    CASE 
+        WHEN COUNT(id) = 0 THEN 0 
+        ELSE (COUNT(id) FILTER (WHERE has_voted = true)::FLOAT / COUNT(id)::FLOAT) * 100 
+    END AS participation_rate
+FROM voters
+GROUP BY election_id;
+
+-- Ensure RLS doesn't block the views (Supabase handles this via the underlying tables, but we grant access)
+GRANT SELECT ON election_results_view TO authenticated;
+GRANT SELECT ON election_participation_view TO authenticated;
+GRANT SELECT ON election_results_view TO anon;
+GRANT SELECT ON election_participation_view TO anon;

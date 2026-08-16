@@ -55,19 +55,33 @@ export const LaunchElection: React.FC = () => {
       ballot: { issues: [] as string[] }
     };
 
+    // 1. Settings Validation
+    if (!election?.start_date || !election?.end_date) {
+      results.settings.issues.push('Election start and end dates must be configured.');
+    } else {
+      const start = new Date(election.start_date).getTime();
+      const end = new Date(election.end_date).getTime();
+      if (end <= start) {
+        results.settings.issues.push('The election end date must be after the start date.');
+      }
+    }
+
+    // 2. Voters Validation
     if (voterCount === 0) {
       results.voters.issues.push('There are no voters added to this election.');
     }
 
-    const allQuestionsHaveOptions = questions.every((q: any) => q.candidate_options && q.candidate_options.length > 0);
+    // 3. Ballot Validation
     if (questions.length === 0) {
       results.ballot.issues.push('There are no questions on the ballot.');
-    } else if (!allQuestionsHaveOptions) {
-      results.ballot.issues.push('All questions on the ballot require at least one option.');
+    } else {
+      questions.forEach((q: any, idx: number) => {
+        const optionsCount = q.candidate_options?.length || 0;
+        if (optionsCount < 2) {
+          results.ballot.issues.push(`Question #${idx + 1} ("${q.title}") requires at least two options.`);
+        }
+      });
     }
-    
-    // As per user screenshot
-    results.ballot.issues.push('All questions on the ballot require a response.');
 
     setScanResults(results);
     const totalIssues = results.settings.issues.length + results.voters.issues.length + results.ballot.issues.length;
@@ -83,9 +97,10 @@ export const LaunchElection: React.FC = () => {
     if (!id) return;
     setLaunching(true);
     try {
-      await api.updateElection(id, { status: 'active' });
+      await api.launchElection(id, election?.title || 'Election');
+      
       alert('Election launched successfully!');
-      navigate(`/election/${id}`);
+      navigate(`/election/${id}/overview`);
     } catch (error) {
       console.error('Error launching election:', error);
       alert('Failed to launch election. Please try again.');
@@ -378,6 +393,7 @@ export const LaunchElection: React.FC = () => {
             setStep(2);
         }}
         results={scanResults}
+        electionId={id!}
       />
     </ElectionSidebarLayout>
   );

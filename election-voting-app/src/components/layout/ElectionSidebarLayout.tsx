@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { 
   FiHome, FiSettings, FiList, FiUsers, 
+<<<<<<< HEAD
   FiEye, FiPlusSquare, FiSend, FiShield
+=======
+  FiEye, FiPlusSquare, FiSend, FiShield, FiBarChart
+>>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 } from 'react-icons/fi';
 import { Header } from './Header';
 import { api } from '../../utils/api';
@@ -13,7 +17,12 @@ interface ElectionSidebarLayoutProps {
 
 export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ children }) => {
   const { id } = useParams();
+<<<<<<< HEAD
   const [currentElection, setCurrentElection] = useState<any>({ title: 'Loading...', status: 'draft' });
+=======
+  const [currentElection, setCurrentElection] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+>>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 
   const [voterCount, setVoterCount] = useState(0);
   const [orgTier, setOrgTier] = useState('FREE');
@@ -21,22 +30,34 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
+      setLoading(true);
       try {
-        const [election, count, org] = await Promise.all([
+        const [election, count, org] = await Promise.allSettled([
           api.getElectionById(id),
           api.getVoterCount(id),
           api.getOrganization()
         ]);
         
-        if (election) setCurrentElection(election);
-        setVoterCount(count);
-        if (org) setOrgTier(org.plan_tier || 'FREE');
+        if (election.status === 'fulfilled' && election.value) {
+            setCurrentElection(election.value);
+        } else {
+            setCurrentElection({ title: 'Access Denied', status: 'error' });
+            console.error(`Sidebar: Election ${id} not found or RLS blocked access.`);
+        }
+
+        if (count.status === 'fulfilled') setVoterCount(count.value);
+        if (org.status === 'fulfilled' && org.value) setOrgTier(org.value.plan_tier || 'FREE');
       } catch (err) {
         console.error("Error fetching data for sidebar:", err);
+        setCurrentElection({ title: 'Connection Error', status: 'error' });
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [id]);
+
+  const electionStatus = currentElection?.status || 'loading';
 
   // Status mapping to display text and color
   const getStatusDisplay = (status: string) => {
@@ -52,20 +73,30 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
     }
   };
 
-  const statusDisplay = getStatusDisplay(currentElection.status);
+  const statusDisplay = getStatusDisplay(electionStatus);
 
   const menuItems = [
     { label: 'Overview', path: `/election/${id}/overview`, icon: <FiHome /> },
     { label: 'Settings', path: `/election/${id}/settings`, icon: <FiSettings /> },
+    // Show Results if the election is active or completed
+    ...(electionStatus === 'active' || electionStatus === 'completed'
+      ? [{ label: 'Results', path: `/election/${id}/results`, icon: <FiBarChart /> }]
+      : []),
     { label: 'Ballot', path: `/election/${id}/ballot`, icon: <FiList /> },
     { label: 'Voters', path: `/election/${id}/voters`, icon: <FiUsers /> },
-    { label: 'Preview', path: `/election/${id}/preview`, icon: <FiEye /> },
+    // Only show Preview if the election is still being built
+    ...(electionStatus === 'building' || electionStatus === 'draft'
+      ? [{ label: 'Preview', path: `/election/${id}/preview`, icon: <FiEye /> }]
+      : []),
     { label: 'Add-ons', path: `/election/${id}/addons`, icon: <FiPlusSquare /> },
     // Only show Fraud Analysis if the election is completed
-    ...(currentElection.status === 'completed' 
+    ...(electionStatus === 'completed' 
       ? [{ label: 'Fraud Analysis', path: `/election/${id}/fraud-analysis`, icon: <FiShield /> }] 
       : []),
-    { label: 'Launch', path: `/election/${id}/launch`, icon: <FiSend /> },
+    // Only show Launch if the election is still being built
+    ...(electionStatus === 'building' || electionStatus === 'draft'
+      ? [{ label: 'Launch', path: `/election/${id}/launch`, icon: <FiSend /> }]
+      : []),
   ];
 
   return (
@@ -75,7 +106,9 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
       {/* Sub Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-[#333]">{currentElection.title}</h2>
+          <h2 className="text-xl font-bold text-[#333]">
+            {loading ? 'Loading...' : (currentElection?.title || 'Election')}
+          </h2>
           <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${statusDisplay.color}`}>
             {statusDisplay.text}
           </span>
@@ -88,9 +121,9 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-56 bg-[#2C3E50] min-h-[calc(100vh-100px)] flex-shrink-0">
+      <div className="flex flex-col lg:flex-row">
+        {/* Sidebar - Desktop */}
+        <aside className="hidden lg:block w-56 bg-[#2C3E50] min-h-[calc(100vh-100px)] flex-shrink-0">
           <nav className="py-4">
             {menuItems.map((item) => (
               <NavLink
@@ -131,8 +164,27 @@ export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ ch
           </div>
         </aside>
 
+        {/* Mobile Navigation - Simple horizontal scroll */}
+        <div className="lg:hidden bg-[#2C3E50] overflow-x-auto flex whitespace-nowrap scrollbar-hide border-t border-white/5">
+            {menuItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-6 py-4 transition-colors ${
+                    isActive
+                      ? 'bg-[#1A2533] text-white border-b-2 border-[#00AEEF]'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`
+                }
+              >
+                <span className="text-sm font-bold uppercase tracking-tight">{item.label}</span>
+              </NavLink>
+            ))}
+        </div>
+
         {/* Main Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

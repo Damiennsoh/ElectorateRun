@@ -31,7 +31,7 @@ export const Settings: React.FC = () => {
   const [activeItem, setActiveItem] = useState(location.pathname);
 
   return (
-    <MainLayout title="(PHASE_3) MMDU INTERNATIONAL STUDENTS LEADERSHIP ELECTION-2024" status="completed">
+    <MainLayout>
       <div className="max-w-7xl mx-auto">
         <div className="flex gap-8">
           {/* Settings Sidebar */}

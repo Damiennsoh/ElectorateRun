@@ -4,6 +4,10 @@ export interface ElectionSettings {
   weighted_voting?: boolean;
   ballot_receipt?: boolean;
   submit_ballot_confirmation?: boolean;
+  registration_start?: string;
+  registration_end?: string;
+  registration_list_public?: boolean;
+  registration_enabled?: boolean;
   email?: {
     enabled: boolean;
     auto_login: boolean;
@@ -21,6 +25,8 @@ export interface Election {
   start_date: string;
   end_date: string;
   timezone: string;
+  is_results_published?: boolean;
+  results_hash?: string;
   settings?: ElectionSettings;
   created_at: string;
   updated_at: string;
@@ -36,7 +42,13 @@ export interface Voter {
   has_voted: boolean;
   voted_at?: string;
   vote_weight?: number;
+<<<<<<< HEAD
   invitation_sent_at?: string;
+=======
+  ip_address?: string;
+  user_agent?: string;
+  ballot_receipt?: string;
+>>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
 }
 
 export interface BallotQuestion {
@@ -90,8 +102,22 @@ export interface ElectionStats {
 export interface ElectionResult {
   ballotQuestion: BallotQuestion;
   results: {
-    candidate: Candidate;
+    candidate: CandidateOption;
     votes: number;
     percentage: number;
   }[];
 }
+<<<<<<< HEAD
+=======
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  election_id?: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+>>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9

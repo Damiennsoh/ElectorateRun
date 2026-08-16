@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface DonutChartData {
   name: string;
@@ -21,17 +21,17 @@ export const DonutChart: React.FC<DonutChartProps> = ({ data, size = 300 }) => {
           data={data}
           cx="50%"
           cy="50%"
-          innerRadius={size * 0.3}
-          outerRadius={size * 0.45}
-          paddingAngle={2}
+          innerRadius={size * 0.35}
+          outerRadius={size * 0.48}
+          paddingAngle={0}
           dataKey="value"
+          stroke="none"
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
         <Tooltip />
-        <Legend verticalAlign="middle" align="right" layout="vertical" />
       </PieChart>
     </ResponsiveContainer>
   );

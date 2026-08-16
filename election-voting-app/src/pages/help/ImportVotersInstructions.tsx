@@ -50,7 +50,7 @@ export const ImportVotersInstructions: React.FC = () => {
 
             <h3 className="text-xl font-bold text-[#333] mt-8 mb-4">Import Template</h3>
             <p className="mb-4">
-              The quickest and easiest way to get started with the voter import process is to download the voter import template by clicking here: <a href="/ElectionRunnerImportTemplate.csv" className="text-[#00AEEF] hover:underline">https://electionrunner.com/voters/import_template</a>. This template file is in the CSV (Comma Separated Values) format which can be opened by all popular spreadsheet applications (Excel, Numbers, Google Spreadsheets, etc.). Starting from or using the template file is not required, but Election Runner will only accept valid CSV files with the first row containing the following columns:
+              The quickest and easiest way to get started with the voter import process is to download the voter import template by clicking here: <a href="/ElectorateRunImportTemplate.csv" className="text-[#00AEEF] hover:underline">https://electoraterun.com/voters/import_template</a>. This template file is in the CSV (Comma Separated Values) format which can be opened by all popular spreadsheet applications (Excel, Numbers, Google Spreadsheets, etc.). Starting from or using the template file is not required, but ElectorateRun will only accept valid CSV files with the first row containing the following columns:
             </p>
 
             <ul className="list-disc pl-8 mb-6 space-y-1 text-[#333]">
@@ -178,7 +178,7 @@ export const ImportVotersInstructions: React.FC = () => {
             </p>
             <div className="mb-4">
               <strong className="text-sm text-[#333] block">Email:</strong>
-              <a href="mailto:support@electionrunner.com" className="text-sm text-[#00AEEF] hover:underline">support@electionrunner.com</a>
+              <a href="mailto:support@electoraterun.com" className="text-sm text-[#00AEEF] hover:underline">support@electoraterun.com</a>
             </div>
             <button className="w-full bg-[#00D02D] hover:bg-[#00B026] text-white px-4 py-2 rounded font-bold transition-colors text-sm">
               + New Support Ticket

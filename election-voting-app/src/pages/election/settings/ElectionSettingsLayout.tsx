@@ -10,6 +10,7 @@ import {
   FiPieChart,
   FiCopy,
   FiTrash2,
+  FiFlag,
 } from 'react-icons/fi';
 
 export const ElectionSettingsLayout: React.FC = () => {
@@ -19,6 +20,7 @@ export const ElectionSettingsLayout: React.FC = () => {
 
   const settingsMenu = [
     { label: 'General', path: `/election/${id}/settings/general`, icon: FiSettings },
+    { label: 'Close Election', path: `/election/${id}/settings/close`, icon: FiFlag },
     { label: 'Dates', path: `/election/${id}/settings/dates`, icon: FiCalendar },
     { label: 'Voters', path: `/election/${id}/settings/voters`, icon: FiUsers },
     { label: 'Messages', path: `/election/${id}/settings/messages`, icon: FiMessageSquare },

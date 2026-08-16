@@ -38,6 +38,18 @@ export const VoteBallot: React.FC = () => {
 
     try {
       const currentVoter = JSON.parse(sessionData);
+      
+      // Check if already voted (bypass for preview)
+      if (!isPreview) {
+          const freshVoter = await api.getVoterById(currentVoter.id);
+          if (freshVoter.has_voted) {
+              setVoter(freshVoter);
+              setSubmitted(true);
+              setLoading(false);
+              return;
+          }
+      }
+
       setVoter(currentVoter);
 
       const [electionWithOrg, questionsData] = await Promise.all([
@@ -46,12 +58,24 @@ export const VoteBallot: React.FC = () => {
       ]);
 
       setElection(electionWithOrg);
+      // If election is not active, prevent voting (unless in preview mode)
+      if (!isPreview && electionWithOrg?.status && electionWithOrg.status !== 'active') {
+        setError('Voting for this election is closed.');
+        setLoading(false);
+        return;
+      }
       if (electionWithOrg.organization) {
         setOrganization(electionWithOrg.organization);
       }
       setQuestions(questionsData as unknown as BallotQuestion[]);
+<<<<<<< HEAD
     } catch (error) {
       console.error('Error loading ballot:', error);
+=======
+    } catch (error: any) {
+      console.error('Error loading ballot data:', error);
+      setError(`Failed to load ballot data: ${error.message || 'Unknown error'}`);
+>>>>>>> 4e0837aa3e245bf5dcc9357438f33256f1eaa5b9
     } finally {
       setLoading(false);
     }
@@ -93,6 +117,16 @@ export const VoteBallot: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // Get Audit Data
+      let ip = 'Unknown';
+      try {
+          const res = await fetch('https://api.ipify.org?format=json');
+          const data = await res.json();
+          ip = data.ip;
+      } catch (e) { console.error("Failed to fetch IP", e); }
+      
+      const userAgent = navigator.userAgent;
+
       const formattedVotes = Object.entries(selections).flatMap(([qId, optIds]) => 
         optIds.map(optId => ({
           ballot_question_id: qId,
@@ -103,13 +137,20 @@ export const VoteBallot: React.FC = () => {
       const voteHash = Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
       setReceiptId(voteHash);
       
-      await api.submitBallot(voter!.id, electionId!, formattedVotes, voteHash);
+      await api.submitBallot(voter!.id, electionId!, formattedVotes, voteHash, { ip, user_agent: userAgent });
       
-      setSubmitted(true);
+      // Update local voter state
+      if (voter) {
+          setVoter({ ...voter, has_voted: true, voted_at: new Date().toISOString(), ballot_receipt: voteHash, ip_address: ip, user_agent: userAgent });
+      }
+
       localStorage.removeItem(`voter_session_${electionId}`);
+      setSubmitted(true);
     } catch (error) {
       console.error('Error submitting ballot:', error);
-      alert('Failed to submit ballot. Please try again.');
+      if (!submitted) {
+          alert('Failed to submit ballot. Please try again.');
+      }
       setSubmitting(false);
     }
   };
@@ -119,7 +160,10 @@ export const VoteBallot: React.FC = () => {
   const settings = (election?.settings as any) || {};
   const isReceiptEnabled = settings.ballot_receipt === true;
 
-  if (submitted) {
+  if (voter?.has_voted || receiptId) {
+    const isAlreadyVoted = voter?.has_voted && !receiptId;
+    const displayVotedAt = voter?.voted_at ? new Date(voter.voted_at).toLocaleString() : 'Recently';
+
     return (
         <div className="min-h-screen bg-[#F4F7F9] flex flex-col">
             {/* Preview Banner */}
@@ -142,9 +186,32 @@ export const VoteBallot: React.FC = () => {
 
             <div className="flex-1 flex items-center justify-center p-6 text-center">
                 <div className="max-w-xl w-full bg-white rounded shadow p-12 border border-gray-100 animate-fade-in text-center">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-8">Thank you for voting in this election!</h1>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6">
+                        {isAlreadyVoted ? 'You have already voted!' : 'Thank you for voting in this election!'}
+                    </h1>
                     
-                    {isReceiptEnabled && (
+                    {isAlreadyVoted && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8 text-left space-y-3">
+                            <div className="flex justify-between text-sm">
+                                <span className="font-bold text-gray-500 uppercase text-[11px]">Voter ID</span>
+                                <span className="font-mono text-gray-700">{voter?.voter_identifier}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="font-bold text-gray-500 uppercase text-[11px]">Date & Time</span>
+                                <span className="text-gray-700">{displayVotedAt}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="font-bold text-gray-500 uppercase text-[11px]">Device / Browser</span>
+                                <span className="text-gray-700 truncate ml-4" title={voter?.user_agent}>{voter?.user_agent?.split(')')[0] + ')'}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="font-bold text-gray-500 uppercase text-[11px]">Ballot Receipt</span>
+                                <span className="font-mono text-[#00AEEF] font-bold">{voter?.ballot_receipt}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isAlreadyVoted && isReceiptEnabled && (
                         <div className="flex flex-col items-center gap-4">
                             <button 
                                 onClick={() => setIsReceiptOpen(true)}
@@ -170,14 +237,14 @@ export const VoteBallot: React.FC = () => {
             <footer className="w-full py-6 px-10 border-t border-gray-200 bg-white flex items-center justify-between text-[13px] text-gray-500 mt-auto">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1 font-bold text-gray-700">
-                        <FiCheckCircle className="text-[#00AEEF]" /> electionrunner
+                        <FiCheckCircle className="text-[#00AEEF]" /> ElectorateRun
                     </div>
                     <div className="flex items-center gap-1">
                         <FiGlobe className="text-gray-400" /> English (US) ▾
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span>Copyright © 2026 Election Runner</span>
+                    <span>Copyright © 2026 ElectorateRun</span>
                     <span className="text-gray-300">|</span>
                     <a href="#" className="hover:underline">Terms of Service</a>
                     <span className="text-gray-300">|</span>
@@ -190,6 +257,7 @@ export const VoteBallot: React.FC = () => {
                 onClose={() => setIsReceiptOpen(false)}
                 data={{
                     electionTitle: election?.title || 'Election',
+                    voterName: voter?.name || 'Voter',
                     votedOn: new Date().toString(),
                     receiptId: receiptId
                 }}
@@ -241,6 +309,12 @@ export const VoteBallot: React.FC = () => {
 
       <div className="max-w-4xl w-full mx-auto px-6 pt-10 pb-20 flex-1">
         <div className="mb-10 text-center">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg flex items-center gap-3 text-red-600 text-sm">
+              <FiX className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <h1 className="text-3xl font-black text-gray-800 mb-2">{election?.title}</h1>
           <p className="text-gray-500 italic">Please make your selections below and click "Submit Ballot" when finished.</p>
         </div>
@@ -322,7 +396,7 @@ export const VoteBallot: React.FC = () => {
       <footer className="w-full py-6 px-10 border-t border-gray-200 bg-white flex items-center justify-between text-[13px] text-gray-500">
         <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 font-bold text-gray-700">
-                <FiCheckCircle className="text-[#00AEEF]" /> electionrunner
+                <FiCheckCircle className="text-[#00AEEF]" /> ElectorateRun
             </div>
             <div className="flex items-center gap-1">
                 <FiGlobe className="text-gray-400" /> English (US) ▾
