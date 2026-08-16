@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiAlertTriangle, FiCheckCircle, FiSave, FiTrash2 } from 'react-icons/fi';
 import { ElectionSidebarLayout } from '../../components/layout/ElectionSidebarLayout';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
