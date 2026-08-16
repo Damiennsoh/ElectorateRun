@@ -19,6 +19,7 @@ export const VoteBallot: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [receiptId, setReceiptId] = useState('');
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams(location.search);
   const isPreview = queryParams.get('preview') === 'true';

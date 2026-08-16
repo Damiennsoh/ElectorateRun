@@ -21,7 +21,6 @@ import { Ballot } from './pages/election/Ballot';
 import { HelpAndSupport } from './pages/help/HelpAndSupport';
 import { ImportVotersInstructions } from './pages/help/ImportVotersInstructions';
 import { RankedChoiceQuestion } from './pages/election/RankedChoiceQuestion';
-import { FraudAnalysis } from './pages/election/FraudAnalysis';
 import { LaunchElection } from './pages/election/LaunchElection';
 import { AddOns } from './pages/election/AddOns';
 import { Preview } from './pages/election/Preview';
