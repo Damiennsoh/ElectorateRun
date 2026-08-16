@@ -4,6 +4,8 @@ import { FiHelpCircle } from 'react-icons/fi';
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  title?: string;
+  status?: string;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {

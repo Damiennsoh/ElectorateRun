@@ -24,7 +24,6 @@ export const OptionDetailsModal: React.FC<OptionDetailsModalProps> = ({
       onClose={onClose}
       title="Option Details"
       maxWidth="max-w-4xl"
-      headerClassName="bg-[#00AEEF] text-white"
     >
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-4">

@@ -42,6 +42,7 @@ export interface Voter {
   has_voted: boolean;
   voted_at?: string;
   vote_weight?: number;
+  invitation_sent_at?: string;
   ip_address?: string;
   user_agent?: string;
   ballot_receipt?: string;
@@ -72,6 +73,12 @@ export interface CandidateOption {
   order_index: number;
 }
 
+export interface Candidate {
+  id: string;
+  title: string;
+  description?: string;
+}
+
 export interface Vote {
   id: string;
   voterId: string;
@@ -97,7 +104,6 @@ export interface ElectionResult {
     percentage: number;
   }[];
 }
-
 export interface AppNotification {
   id: string;
   user_id: string;

@@ -53,7 +53,7 @@ export const api = {
       .eq('user_id', election.user_id)
       .single();
     
-    // We don't throw for orgError because an election should still show even if org profile isn't set
+    // We don't throw for error because an election should still show even if org profile isn't set
     return { ...election, organization };
   },
 

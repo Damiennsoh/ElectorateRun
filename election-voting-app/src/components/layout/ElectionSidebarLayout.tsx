@@ -13,7 +13,7 @@ interface ElectionSidebarLayoutProps {
 
 export const ElectionSidebarLayout: React.FC<ElectionSidebarLayoutProps> = ({ children }) => {
   const { id } = useParams();
-  const [currentElection, setCurrentElection] = useState<any>(null);
+  const [currentElection, setCurrentElection] = useState<any>({ title: 'Loading...', status: 'draft' });
   const [loading, setLoading] = useState(true);
 
   const [voterCount, setVoterCount] = useState(0);
